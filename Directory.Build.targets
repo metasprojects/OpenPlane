@@ -1,0 +1,7 @@
+<Project>
+  <!-- Also map the NuGet package folder (it holds the user name on most machines): some packages add source files to
+       the compilation from there. NuGetPackageRoot is only known this late, so this lives here, not in the .props. -->
+  <PropertyGroup Condition="'$(NuGetPackageRoot)' != ''">
+    <PathMap>$(PathMap),$([MSBuild]::EnsureTrailingSlash($(NuGetPackageRoot)))=/_nuget/</PathMap>
+  </PropertyGroup>
+</Project>

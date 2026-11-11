@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- WinExe: no console window behind the app on Windows (it is a normal executable on Linux). -->
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>OpenPlane.App</RootNamespace>
+    <AssemblyName>OpenPlane</AssemblyName>
+    <Description>OpenPlane: convert Flyout planes, build your own and share them, for Nuclear Option.</Description>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <ApplicationIcon>Assets\openplane.ico</ApplicationIcon>
+    <!-- Where the mod's build output lives (built from src/OpenPlane.Mod, which needs the game's DLLs in lib/game). -->
+    <ModOutputDir>$(MSBuildThisFileDirectory)..\OpenPlane.Mod\bin\$(Configuration)\netstandard2.1\</ModOutputDir>
+    <ModCanBuild Condition="Exists('$(GameManagedDir)\Assembly-CSharp.dll') And Exists('$(BlueprinterDll)')">true</ModCanBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Photino.NET" Version="4.0.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenPlane.Core\OpenPlane.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Build the mod first when this machine can (it needs the game's DLLs); otherwise the app ships without mod files
+       and says so in Settings. -->
+  <ItemGroup Condition="'$(ModCanBuild)' == 'true'">
+    <ProjectReference Include="..\OpenPlane.Mod\OpenPlane.Mod.csproj" ReferenceOutputAssembly="false" Private="false" SkipGetTargetFrameworkProperties="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="ThirdParty\Blueprinter-LICENSE.txt" Link="mod\Blueprinter\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(BlueprinterDll)" Condition="Exists('$(BlueprinterDll)')" Link="mod\Blueprinter\$([System.IO.Path]::GetFileName('$(BlueprinterDll)'))" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Copy the mod's files (OpenPlane.Mod.dll and the OpenPlane.Core.dll it uses) into mod/OpenPlane next to the app. -->
+  <Target Name="CopyModFiles" AfterTargets="Build">
+    <ItemGroup>
+      <_ModFile Include="$(ModOutputDir)OpenPlane.Mod.dll;$(ModOutputDir)OpenPlane.Core.dll" Condition="Exists('$(ModOutputDir)OpenPlane.Mod.dll')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_ModFile)" DestinationFolder="$(OutDir)mod\OpenPlane" SkipUnchangedFiles="true" Condition="'@(_ModFile)' != ''" />
+    <Message Importance="high" Text="OpenPlane: the mod isn't built on this machine (lib/game is missing), so the app has no mod files to install." Condition="'@(_ModFile)' == ''" />
+  </Target>
+
+  <Target Name="CopyModFilesOnPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <_ModPublishFile Include="$(ModOutputDir)OpenPlane.Mod.dll;$(ModOutputDir)OpenPlane.Core.dll" Condition="Exists('$(ModOutputDir)OpenPlane.Mod.dll')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_ModPublishFile)" DestinationFolder="$(PublishDir)mod\OpenPlane" SkipUnchangedFiles="true" Condition="'@(_ModPublishFile)' != ''" />
+  </Target>
+
+</Project>

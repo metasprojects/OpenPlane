@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <Authors>Meta</Authors>
+    <Company>Meta</Company>
+    <Product>OpenPlane</Product>
+    <Copyright>Copyright (c) 2026 Meta</Copyright>
+    <!-- The one place the version is set. OpenPlane.Core turns it into OpenPlane.Core.BuildInfo.Version (a constant the
+         app, the mod and the converter use), the assemblies get it as their version, and tools/package.ps1 reads it. -->
+    <Version>0.1.0</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- Reproducible output with no local paths in it: every path under the repository is written as /_/ in the
+         assemblies and their .pdb files (including the .pdb path each assembly records). -->
+    <Deterministic>true</Deterministic>
+    <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <EnableSourceLink>false</EnableSourceLink>
+    <!-- Game references for the mod. Copy them from your own Nuclear Option install into lib/game
+         (never commit them), or point GameManagedDir at <game>\NuclearOption_Data\Managed in
+         Directory.Build.local.props. -->
+    <GameManagedDir Condition="'$(GameManagedDir)' == ''">$(MSBuildThisFileDirectory)lib\game</GameManagedDir>
+    <BlueprinterDll Condition="'$(BlueprinterDll)' == ''">$(MSBuildThisFileDirectory)lib\blueprinter\Blueprinter_2.1.1.dll</BlueprinterDll>
+  </PropertyGroup>
+  <Import Project="Directory.Build.local.props" Condition="Exists('$(MSBuildThisFileDirectory)Directory.Build.local.props')" />
+</Project>

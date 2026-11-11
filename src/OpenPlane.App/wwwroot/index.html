@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>OpenPlane</title>
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/builder.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.js",
+        "three/addons/OrbitControls.js": "./vendor/three/OrbitControls.js",
+        "three/addons/TransformControls.js": "./vendor/three/TransformControls.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="app-header">
+    <a class="brand" href="#/" aria-label="OpenPlane home">
+      <img src="img/logo.svg" alt="" width="28" height="28">
+      <span>OpenPlane</span>
+    </a>
+    <span class="byline" id="byline">planes for Nuclear Option</span>
+    <nav class="app-nav" aria-label="Main">
+      <a href="#/" data-nav="home">My planes</a>
+      <a href="#/convert" data-nav="convert">Convert</a>
+      <a href="#/build" data-nav="build">Build</a>
+      <a href="#/share" data-nav="share">Share</a>
+      <a href="#/settings" data-nav="settings">Settings</a>
+    </nav>
+    <div class="header-right">
+      <button type="button" id="update-badge" class="header-status update-link" hidden></button>
+      <span id="mod-badge" class="header-status" hidden></span>
+      <button type="button" class="btn primary" id="play-btn" title="Start Nuclear Option through Steam">
+        <span class="i" data-icon="play"></span>Play Nuclear Option
+      </button>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+  <div id="drop-overlay" class="drop-overlay" hidden>
+    <div class="drop-box">
+      <span class="i big" data-icon="import"></span>
+      <strong>Drop to import</strong>
+      <span>.oplane planes, or a .zip of a Flyout craft folder.<br>In the builder: a picture (reference image) or an .obj shape.</span>
+    </div>
+  </div>
+  <noscript>OpenPlane needs JavaScript to run.</noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

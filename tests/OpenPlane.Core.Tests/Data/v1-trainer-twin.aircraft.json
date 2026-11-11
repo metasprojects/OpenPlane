@@ -1,0 +1,793 @@
+{
+  "format": "openplane/1",
+  "name": "Trainer twin jet",
+  "author": "Test Pilot",
+  "origin": {
+    "source": "openplane",
+    "builder": "Test Pilot"
+  },
+  "donor": "COIN",
+  "wings": [
+    {
+      "name": "Main wing (right)",
+      "root_leading": [
+        0.45,
+        -0.35,
+        2.5
+      ],
+      "root_trailing": [
+        0.45342220705895964,
+        -0.3891160056747874,
+        1.000514012536664
+      ],
+      "tip_leading": [
+        5.032495611222029,
+        0.05091641663922758,
+        2.3393644603379604
+      ],
+      "tip_trailing": [
+        5.034377825104457,
+        0.029402613518094534,
+        1.5146471672331256
+      ],
+      "up": [
+        -0.08712587665138179,
+        0.9958533270492272,
+        -0.026176948307873153
+      ],
+      "root_twist_deg": 0.0,
+      "tip_twist_deg": 0.0,
+      "thickness_ratio": 0.12,
+      "fuel_tank": false,
+      "surfaces": [
+        {
+          "role": "fixed",
+          "edge": "trailing",
+          "root_leading": [
+            0.45342220705895964,
+            -0.3891160056747874,
+            1.000514012536664
+          ],
+          "root_trailing": [
+            0.4545629427452795,
+            -0.40215467423304985,
+            0.5006853500488855
+          ],
+          "tip_leading": [
+            0.6366604317807796,
+            -0.3723752609070721,
+            1.0210793387245225
+          ],
+          "tip_trailing": [
+            0.6377806342247456,
+            -0.38517923343128585,
+            0.530247592161524
+          ],
+          "min_deg": 0.0,
+          "max_deg": 0.0,
+          "servo_deg_per_sec": 60.0,
+          "inputs": []
+        },
+        {
+          "role": "flap",
+          "edge": "trailing",
+          "root_leading": [
+            0.6366604317807796,
+            -0.3723752609070721,
+            1.0210793387245225
+          ],
+          "root_trailing": [
+            0.6377806342247456,
+            -0.38517923343128585,
+            0.530247592161524
+          ],
+          "tip_leading": [
+            2.9729477969839833,
+            -0.1589307651187023,
+            1.2832872476197177
+          ],
+          "tip_trailing": [
+            2.973806200587939,
+            -0.16874236320879482,
+            0.9071661790976644
+          ],
+          "min_deg": 0.0,
+          "max_deg": 30.0,
+          "servo_deg_per_sec": 20.0,
+          "inputs": [
+            {
+              "axis": "flaps",
+              "gain": 30.0
+            }
+          ]
+        },
+        {
+          "role": "fixed",
+          "edge": "trailing",
+          "root_leading": [
+            2.9729477969839833,
+            -0.1589307651187023,
+            1.2832872476197177
+          ],
+          "root_trailing": [
+            2.973806200587939,
+            -0.16874236320879482,
+            0.9071661790976644
+          ],
+          "tip_leading": [
+            3.110376465525348,
+            -0.1463752065429159,
+            1.2987112422606115
+          ],
+          "tip_trailing": [
+            3.1112194691975383,
+            -0.15601078260747184,
+            0.9293378606821432
+          ],
+          "min_deg": 0.0,
+          "max_deg": 0.0,
+          "servo_deg_per_sec": 60.0,
+          "inputs": []
+        },
+        {
+          "role": "aileron",
+          "edge": "trailing",
+          "root_leading": [
+            3.110376465525348,
+            -0.1463752065429159,
+            1.2987112422606115
+          ],
+          "root_trailing": [
+            3.1112194691975383,
+            -0.15601078260747184,
+            0.9293378606821432
+          ],
+          "tip_leading": [
+            4.805330044202182,
+            0.00847668255845041,
+            1.4889405094983024
+          ],
+          "tip_trailing": [
+            4.8059831153826,
+            0.0010120448088451472,
+            1.202788600224049
+          ],
+          "min_deg": -20.0,
+          "max_deg": 20.0,
+          "servo_deg_per_sec": 90.0,
+          "inputs": [
+            {
+              "axis": "roll",
+              "gain": -20.0
+            }
+          ]
+        },
+        {
+          "role": "fixed",
+          "edge": "trailing",
+          "root_leading": [
+            4.805330044202182,
+            0.00847668255845041,
+            1.4889405094983024
+          ],
+          "root_trailing": [
+            4.8059831153826,
+            0.0010120448088451472,
+            1.202788600224049
+          ],
+          "tip_leading": [
+            5.034377825104457,
+            0.029402613518094534,
+            1.5146471672331256
+          ],
+          "tip_trailing": [
+            5.035005229731933,
+            0.022231345811050185,
+            1.2397414028648472
+          ],
+          "min_deg": 0.0,
+          "max_deg": 0.0,
+          "servo_deg_per_sec": 60.0,
+          "inputs": []
+        }
+      ]
+    },
+    {
+      "name": "Main wing (left)",
+      "root_leading": [
+        -0.45,
+        -0.35,
+        2.5
+      ],
+      "root_trailing": [
+        -0.45342220705895964,
+        -0.3891160056747874,
+        1.000514012536664
+      ],
+      "tip_leading": [
+        -5.032495611222029,
+        0.05091641663922758,
+        2.3393644603379604
+      ],
+      "tip_trailing": [
+        -5.034377825104457,
+        0.029402613518094534,
+        1.5146471672331256
+      ],
+      "up": [
+        0.08712587665138179,
+        0.9958533270492272,
+        -0.026176948307873153
+      ],
+      "root_twist_deg": 0.0,
+      "tip_twist_deg": 0.0,
+      "thickness_ratio": 0.12,
+      "fuel_tank": false,
+      "surfaces": [
+        {
+          "role": "fixed",
+          "edge": "trailing",
+          "root_leading": [
+            -0.45342220705895964,
+            -0.3891160056747874,
+            1.000514012536664
+          ],
+          "root_trailing": [
+            -0.4545629427452795,
+            -0.40215467423304985,
+            0.5006853500488855
+          ],
+          "tip_leading": [
+            -0.6366604317807796,
+            -0.3723752609070721,
+            1.0210793387245225
+          ],
+          "tip_trailing": [
+            -0.6377806342247456,
+            -0.38517923343128585,
+            0.530247592161524
+          ],
+          "min_deg": 0.0,
+          "max_deg": 0.0,
+          "servo_deg_per_sec": 60.0,
+          "inputs": []
+        },
+        {
+          "role": "flap",
+          "edge": "trailing",
+          "root_leading": [
+            -0.6366604317807796,
+            -0.3723752609070721,
+            1.0210793387245225
+          ],
+          "root_trailing": [
+            -0.6377806342247456,
+            -0.38517923343128585,
+            0.530247592161524
+          ],
+          "tip_leading": [
+            -2.9729477969839833,
+            -0.1589307651187023,
+            1.2832872476197177
+          ],
+          "tip_trailing": [
+            -2.973806200587939,
+            -0.16874236320879482,
+            0.9071661790976644
+          ],
+          "min_deg": 0.0,
+          "max_deg": 30.0,
+          "servo_deg_per_sec": 20.0,
+          "inputs": [
+            {
+              "axis": "flaps",
+              "gain": 30.0
+            }
+          ]
+        },
+        {
+          "role": "fixed",
+          "edge": "trailing",
+          "root_leading": [
+            -2.9729477969839833,
+            -0.1589307651187023,
+            1.2832872476197177
+          ],
+          "root_trailing": [
+            -2.973806200587939,
+            -0.16874236320879482,
+            0.9071661790976644
+          ],
+          "tip_leading": [
+            -3.110376465525348,
+            -0.1463752065429159,
+            1.2987112422606115
+          ],
+          "tip_trailing": [
+            -3.1112194691975383,
+            -0.15601078260747184,
+            0.9293378606821432
+          ],
+          "min_deg": 0.0,
+          "max_deg": 0.0,
+          "servo_deg_per_sec": 60.0,
+          "inputs": []
+        },
+        {
+          "role": "aileron",
+          "edge": "trailing",
+          "root_leading": [
+            -3.110376465525348,
+            -0.1463752065429159,
+            1.2987112422606115
+          ],
+          "root_trailing": [
+            -3.1112194691975383,
+            -0.15601078260747184,
+            0.9293378606821432
+          ],
+          "tip_leading": [
+            -4.805330044202182,
+            0.00847668255845041,
+            1.4889405094983024
+          ],
+          "tip_trailing": [
+            -4.8059831153826,
+            0.0010120448088451472,
+            1.202788600224049
+          ],
+          "min_deg": -20.0,
+          "max_deg": 20.0,
+          "servo_deg_per_sec": 90.0,
+          "inputs": [
+            {
+              "axis": "roll",
+              "gain": 20.0
+            }
+          ]
+        },
+        {
+          "role": "fixed",
+          "edge": "trailing",
+          "root_leading": [
+            -4.805330044202182,
+            0.00847668255845041,
+            1.4889405094983024
+          ],
+          "root_trailing": [
+            -4.8059831153826,
+            0.0010120448088451472,
+            1.202788600224049
+          ],
+          "tip_leading": [
+            -5.034377825104457,
+            0.029402613518094534,
+            1.5146471672331256
+          ],
+          "tip_trailing": [
+            -5.035005229731933,
+            0.022231345811050185,
+            1.2397414028648472
+          ],
+          "min_deg": 0.0,
+          "max_deg": 0.0,
+          "servo_deg_per_sec": 60.0,
+          "inputs": []
+        }
+      ]
+    },
+    {
+      "name": "Tailplane (right)",
+      "root_leading": [
+        0.15,
+        0.25,
+        -3.55
+      ],
+      "root_trailing": [
+        0.15,
+        0.25,
+        -4.3625
+      ],
+      "tip_leading": [
+        1.9,
+        0.25,
+        -3.795946460729185
+      ],
+      "tip_trailing": [
+        1.9,
+        0.25,
+        -4.2509464607291845
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "root_twist_deg": 0.0,
+      "tip_twist_deg": 0.0,
+      "thickness_ratio": 0.12,
+      "fuel_tank": false,
+      "surfaces": [
+        {
+          "role": "elevator",
+          "edge": "trailing",
+          "root_leading": [
+            0.15,
+            0.25,
+            -4.3625
+          ],
+          "root_trailing": [
+            0.15,
+            0.25,
+            -4.8
+          ],
+          "tip_leading": [
+            1.9,
+            0.25,
+            -4.2509464607291845
+          ],
+          "tip_trailing": [
+            1.9,
+            0.25,
+            -4.495946460729185
+          ],
+          "min_deg": -20.0,
+          "max_deg": 20.0,
+          "servo_deg_per_sec": 90.0,
+          "inputs": [
+            {
+              "axis": "pitch",
+              "gain": 20.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tailplane (left)",
+      "root_leading": [
+        -0.15,
+        0.25,
+        -3.55
+      ],
+      "root_trailing": [
+        -0.15,
+        0.25,
+        -4.3625
+      ],
+      "tip_leading": [
+        -1.9,
+        0.25,
+        -3.795946460729185
+      ],
+      "tip_trailing": [
+        -1.9,
+        0.25,
+        -4.2509464607291845
+      ],
+      "up": [
+        -0.0,
+        1.0,
+        0.0
+      ],
+      "root_twist_deg": 0.0,
+      "tip_twist_deg": 0.0,
+      "thickness_ratio": 0.12,
+      "fuel_tank": false,
+      "surfaces": [
+        {
+          "role": "elevator",
+          "edge": "trailing",
+          "root_leading": [
+            -0.15,
+            0.25,
+            -4.3625
+          ],
+          "root_trailing": [
+            -0.15,
+            0.25,
+            -4.8
+          ],
+          "tip_leading": [
+            -1.9,
+            0.25,
+            -4.2509464607291845
+          ],
+          "tip_trailing": [
+            -1.9,
+            0.25,
+            -4.495946460729185
+          ],
+          "min_deg": -20.0,
+          "max_deg": 20.0,
+          "servo_deg_per_sec": 90.0,
+          "inputs": [
+            {
+              "axis": "pitch",
+              "gain": 20.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fin",
+      "root_leading": [
+        0.0,
+        0.55,
+        -3.3
+      ],
+      "root_trailing": [
+        0.0,
+        0.55,
+        -4.2425
+      ],
+      "tip_leading": [
+        9.184850993605148E-17,
+        2.05,
+        -4.166025403784438
+      ],
+      "tip_trailing": [
+        9.184850993605148E-17,
+        2.05,
+        -4.621025403784438
+      ],
+      "up": [
+        -1.0,
+        6.123233995736766E-17,
+        0.0
+      ],
+      "root_twist_deg": 0.0,
+      "tip_twist_deg": 0.0,
+      "thickness_ratio": 0.12,
+      "fuel_tank": false,
+      "surfaces": [
+        {
+          "role": "rudder",
+          "edge": "trailing",
+          "root_leading": [
+            0.0,
+            0.55,
+            -4.2425
+          ],
+          "root_trailing": [
+            0.0,
+            0.55,
+            -4.75
+          ],
+          "tip_leading": [
+            9.184850993605148E-17,
+            2.05,
+            -4.621025403784438
+          ],
+          "tip_trailing": [
+            9.184850993605148E-17,
+            2.05,
+            -4.866025403784438
+          ],
+          "min_deg": -20.0,
+          "max_deg": 20.0,
+          "servo_deg_per_sec": 90.0,
+          "inputs": [
+            {
+              "axis": "yaw",
+              "gain": 20.0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "fuselages": [
+    {
+      "name": "Fuselage",
+      "mesh_index": 0,
+      "bounds_min": [
+        -0.5249999761581421,
+        -0.550000011920929,
+        -4.900000095367432
+      ],
+      "bounds_max": [
+        0.5249999761581421,
+        0.8500000238418579,
+        4.25
+      ],
+      "frontal_area": 1.2284923384761322,
+      "wetted_area": 26.45805798605637,
+      "skin_thickness": 0.0
+    }
+  ],
+  "engines": [
+    {
+      "type": "piston-prop",
+      "title": "Propeller engine",
+      "position": [
+        0.0,
+        0.05,
+        4.35
+      ],
+      "thrust_direction": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "diameter_m": 0.0,
+      "max_thrust_n": 16124.0,
+      "afterburner_thrust_n": 0.0,
+      "power_kw": 820.0,
+      "prop_diameter_m": 2.4,
+      "estimated": false
+    },
+    {
+      "type": "turbojet",
+      "title": "Jet engine",
+      "position": [
+        2.0,
+        0.0,
+        -3.7
+      ],
+      "thrust_direction": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "diameter_m": 0.9,
+      "max_thrust_n": 45000.0,
+      "afterburner_thrust_n": 0.0,
+      "estimated": false
+    },
+    {
+      "type": "turbojet",
+      "title": "Jet engine",
+      "position": [
+        -2.0,
+        0.0,
+        -3.7
+      ],
+      "thrust_direction": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "diameter_m": 0.9,
+      "max_thrust_n": 45000.0,
+      "afterburner_thrust_n": 0.0,
+      "estimated": false
+    }
+  ],
+  "gear": [
+    {
+      "position": [
+        0.0,
+        -0.45,
+        3.15
+      ],
+      "strut_length": 0.87,
+      "travel": 0.17,
+      "wheel_radius": 0.15,
+      "steerable": true,
+      "brakes": false,
+      "retractable": true
+    },
+    {
+      "position": [
+        0.79,
+        -0.3,
+        1.2
+      ],
+      "strut_length": 0.97,
+      "travel": 0.19,
+      "wheel_radius": 0.2,
+      "steerable": false,
+      "brakes": true,
+      "retractable": true
+    },
+    {
+      "position": [
+        -0.79,
+        -0.3,
+        1.2
+      ],
+      "strut_length": 0.97,
+      "travel": 0.19,
+      "wheel_radius": 0.2,
+      "steerable": false,
+      "brakes": true,
+      "retractable": true
+    }
+  ],
+  "hardpoints": [
+    {
+      "position": [
+        2.3,
+        -0.35,
+        1.6
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "original_payload": "empty",
+      "allows": [
+        "rockets",
+        "bomb",
+        "missile-ground"
+      ],
+      "internal": false
+    },
+    {
+      "position": [
+        -2.3,
+        -0.35,
+        1.6
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        -0.0,
+        1.0
+      ],
+      "original_payload": "empty",
+      "allows": [
+        "rockets",
+        "bomb",
+        "missile-ground"
+      ],
+      "internal": false
+    }
+  ],
+  "guns": [],
+  "cockpit": {
+    "position": [
+      0.0,
+      0.6,
+      0.7
+    ]
+  },
+  "sensors": {
+    "radar": false,
+    "irst": false,
+    "targeting_pod": false,
+    "radar_warning": false,
+    "countermeasures": false,
+    "jammer": false
+  },
+  "handling": {
+    "g_limit": 0.0,
+    "aoa_limit_deg": 0.0
+  },
+  "mass": {
+    "empty_kg": 0.0,
+    "fuel_kg": 0.0
+  },
+  "paint": {
+    "base_color": [
+      0.86,
+      0.87,
+      0.85,
+      1.0
+    ],
+    "metallic": 0.0,
+    "smoothness": 0.3
+  },
+  "stats": {
+    "span_m": 10.070010459463866,
+    "length_m": 9.150000095367432,
+    "height_m": 2.6000000119209288,
+    "wing_area_m2": 17.672505957925658,
+    "fin_area_m2": 1.6124999999999998,
+    "total_static_thrust_n": 106124.0,
+    "bounds_min": [
+      -5.035005229731933,
+      -0.550000011920929,
+      -4.900000095367432
+    ],
+    "bounds_max": [
+      5.035005229731933,
+      2.05,
+      4.25
+    ]
+  }
+}

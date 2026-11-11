@@ -1,0 +1,22 @@
+# Build output
+bin/
+obj/
+out/
+TestResults/
+*.user
+.vs/
+.idea/
+
+# Never commit: game files, private sample craft, local helpers and notes
+lib/
+samples-private/
+.local/
+CLAUDE.local.md
+Directory.Build.local.props
+
+# Generated planes (examples live in docs/examples when we add them)
+*.oplane
+!docs/examples/*.oplane
+
+# Local tool settings (dev previews)
+.claude/

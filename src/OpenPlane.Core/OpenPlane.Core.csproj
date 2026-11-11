@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>OpenPlane.Core</RootNamespace>
+    <AssemblyName>OpenPlane.Core</AssemblyName>
+    <Description>Shared code for OpenPlane: the .oplane plane format, the Flyout converter, checks and flight estimates.</Description>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Nuclear Option ships Newtonsoft.Json 13.0.2 (assembly version 13.0.0.0), so the mod uses the game's copy. -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <!-- OpenPlane.Core.BuildInfo.Version: the <Version> from Directory.Build.props as a constant, so the app, the mod (its
+       BepInEx version and multiplayer version suffix) and the converter all use the same, deterministic value. -->
+  <Target Name="OpenPlaneBuildInfo" BeforeTargets="CoreCompile" DependsOnTargets="PrepareForBuild">
+    <PropertyGroup>
+      <_OpBuildInfoFile>$(IntermediateOutputPath)OpenPlane.BuildInfo.g.cs</_OpBuildInfoFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_OpBuildInfoFile)" Overwrite="true" WriteOnlyWhenDifferent="true"
+                      Lines="namespace OpenPlane.Core { public static class BuildInfo { public const string Version = &quot;$(Version)&quot;%3B } }" />
+    <ItemGroup>
+      <Compile Include="$(_OpBuildInfoFile)" />
+      <FileWrites Include="$(_OpBuildInfoFile)" />
+    </ItemGroup>
+  </Target>
+
+</Project>

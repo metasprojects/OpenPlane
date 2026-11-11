@@ -1,0 +1,317 @@
+{
+  "format": "openplane-builder/1",
+  "name": "Trainer twin jet",
+  "author": "Test Pilot",
+  "donor": "auto",
+  "fuselages": [
+    {
+      "id": "fus1",
+      "name": "Fuselage",
+      "kind": "loft",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "mirror": false,
+      "rings": [
+        {
+          "z": 4.25,
+          "y": 0.0,
+          "width": 0.3,
+          "height": 0.3,
+          "roundness": 1.0
+        },
+        {
+          "z": 3.95,
+          "y": 0.0,
+          "width": 0.85,
+          "height": 0.9,
+          "roundness": 0.85
+        },
+        {
+          "z": 2.8,
+          "y": 0.05,
+          "width": 1.05,
+          "height": 1.15,
+          "roundness": 0.75
+        },
+        {
+          "z": 1.0,
+          "y": 0.15,
+          "width": 1.05,
+          "height": 1.4,
+          "roundness": 0.75
+        },
+        {
+          "z": -0.8,
+          "y": 0.15,
+          "width": 0.9,
+          "height": 1.15,
+          "roundness": 0.75
+        },
+        {
+          "z": -3.2,
+          "y": 0.25,
+          "width": 0.45,
+          "height": 0.65,
+          "roundness": 0.8
+        },
+        {
+          "z": -4.9,
+          "y": 0.35,
+          "width": 0.14,
+          "height": 0.3,
+          "roundness": 0.8
+        }
+      ],
+      "sides": 24,
+      "mesh_index": 0,
+      "scale": 1.0,
+      "source_frontal_area": 0.0,
+      "skin_thickness": 0.0
+    }
+  ],
+  "wings": [
+    {
+      "id": "wing1",
+      "name": "Main wing",
+      "kind": "wing",
+      "mirror": true,
+      "root": [
+        0.45,
+        -0.35,
+        2.5
+      ],
+      "span": 4.6,
+      "root_chord": 2.0,
+      "tip_chord": 1.1,
+      "sweep_deg": 2.0,
+      "dihedral_deg": 5.0,
+      "incidence_deg": 1.5,
+      "vertical": false,
+      "thickness_ratio": 0.12,
+      "surfaces": [
+        {
+          "type": "flap",
+          "from_pct": 4.0,
+          "to_pct": 55.0,
+          "chord_pct": 25.0
+        },
+        {
+          "type": "aileron",
+          "from_pct": 58.0,
+          "to_pct": 95.0,
+          "chord_pct": 25.0
+        }
+      ],
+      "panels": [],
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 1.0
+    },
+    {
+      "id": "wing2",
+      "name": "Tailplane",
+      "kind": "wing",
+      "mirror": true,
+      "root": [
+        0.15,
+        0.25,
+        -3.55
+      ],
+      "span": 1.75,
+      "root_chord": 1.25,
+      "tip_chord": 0.7,
+      "sweep_deg": 8.0,
+      "dihedral_deg": 0.0,
+      "incidence_deg": 0.0,
+      "vertical": false,
+      "thickness_ratio": 0.12,
+      "surfaces": [
+        {
+          "type": "elevator",
+          "from_pct": 0.0,
+          "to_pct": 100.0,
+          "chord_pct": 35.0
+        }
+      ],
+      "panels": [],
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 1.0
+    },
+    {
+      "id": "wing3",
+      "name": "Fin",
+      "kind": "wing",
+      "mirror": false,
+      "root": [
+        0.0,
+        0.55,
+        -3.3
+      ],
+      "span": 1.5,
+      "root_chord": 1.45,
+      "tip_chord": 0.7,
+      "sweep_deg": 30.0,
+      "dihedral_deg": 0.0,
+      "incidence_deg": 0.0,
+      "vertical": true,
+      "thickness_ratio": 0.12,
+      "surfaces": [
+        {
+          "type": "rudder",
+          "from_pct": 0.0,
+          "to_pct": 100.0,
+          "chord_pct": 35.0
+        }
+      ],
+      "panels": [],
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 1.0
+    }
+  ],
+  "engines": [
+    {
+      "id": "eng1",
+      "name": "Propeller engine",
+      "type": "prop",
+      "position": [
+        0.0,
+        0.05,
+        4.35
+      ],
+      "mirror": false,
+      "thrust_kn": 40.0,
+      "afterburner_kn": 0.0,
+      "diameter_m": 0.9,
+      "power_kw": 820.0,
+      "prop_diameter_m": 2.4,
+      "estimated": false
+    },
+    {
+      "id": "eng-9lwna0",
+      "name": "Jet engine",
+      "type": "jet",
+      "position": [
+        2.0,
+        0.0,
+        -3.7
+      ],
+      "mirror": true,
+      "thrust_kn": 45.0,
+      "afterburner_kn": 0.0,
+      "diameter_m": 0.9,
+      "power_kw": 600.0,
+      "prop_diameter_m": 2.4,
+      "estimated": false
+    }
+  ],
+  "gear": [
+    {
+      "id": "gear-nose",
+      "name": "Nose gear",
+      "kind": "nose",
+      "position": [
+        0.0,
+        -0.45,
+        3.15
+      ],
+      "mirror": false,
+      "strut_length": 0.87,
+      "wheel_radius": 0.15,
+      "travel": 0.17,
+      "steerable": true,
+      "brakes": false,
+      "retractable": true
+    },
+    {
+      "id": "gear-main",
+      "name": "Main gear",
+      "kind": "main",
+      "position": [
+        0.79,
+        -0.3,
+        1.2
+      ],
+      "mirror": true,
+      "strut_length": 0.97,
+      "wheel_radius": 0.2,
+      "travel": 0.19,
+      "steerable": false,
+      "brakes": true,
+      "retractable": true
+    }
+  ],
+  "hardpoints": [
+    {
+      "id": "hp1",
+      "name": "Wing station",
+      "position": [
+        2.3,
+        -0.35,
+        1.6
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "mirror": true,
+      "allows": [
+        "rockets",
+        "bomb",
+        "missile-ground"
+      ],
+      "internal": false,
+      "original_payload": "empty"
+    }
+  ],
+  "guns": [],
+  "cockpit": {
+    "position": [
+      0.0,
+      0.6,
+      0.7
+    ]
+  },
+  "sensors": {
+    "radar": false,
+    "irst": false,
+    "targeting_pod": false,
+    "radar_warning": false,
+    "countermeasures": false,
+    "jammer": false
+  },
+  "handling": {
+    "g_limit": 0.0,
+    "aoa_limit_deg": 0.0
+  },
+  "mass": {
+    "empty_kg": 0.0,
+    "fuel_kg": 0.0
+  },
+  "paint": {
+    "base_color": [
+      0.86,
+      0.87,
+      0.85,
+      1.0
+    ],
+    "metallic": 0.0,
+    "smoothness": 0.3
+  },
+  "design_hash": "db763d30972680e2194eb2a42c5f500cabb7ce34"
+}

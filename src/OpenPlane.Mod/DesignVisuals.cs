@@ -13,7 +13,7 @@ namespace OpenPlane.Mod
     /// interior pieces, its instruments (which work) and its lights. Materials are copies of the game's own URP materials,
     /// so they use shader variants the game ships.
     /// </summary>
-    internal static class DesignVisuals
+    internal static partial class DesignVisuals
     {
         /// <summary>The design's meshes split by role, each with one submesh per material.</summary>
         internal sealed class Group
@@ -103,10 +103,25 @@ namespace OpenPlane.Mod
             }
         }
 
-        /// <summary>Exterior body, interior pieces and wings, each grouped by material.</summary>
+        /// <summary>
+        /// A control surface (or an all-moving panel) drawn on its own so it can turn: its mesh in design space and its hinge
+        /// line (design space). Key: "w{wing}" for a whole panel, "w{wing}s{surface}" for a strip.
+        /// </summary>
+        internal sealed class MovingPiece
+        {
+            public string Key = "";
+            public Group Group = new Group();
+            public Vector3 HingeA, HingeB;
+        }
+
+        /// <summary>The control surfaces and all-moving panels of the last <see cref="Build"/>, drawn apart from the wings.</summary>
+        internal static List<MovingPiece> LastMoving = new List<MovingPiece>();
+
+        /// <summary>Exterior body, interior pieces and wings, each grouped by material. Moving surfaces go to <see cref="LastMoving"/>.</summary>
         public static (Group body, Group interior, Group wings) Build(AircraftDesign design, List<MeshData> meshes)
         {
             var body = new Builder(); var interior = new Builder(); var wings = new Builder();
+            var moving = new List<(string key, Builder b, Vector3 a, Vector3 c)>();
             foreach (var m in meshes)
             {
                 var target = m.Role == MeshData.Interior ? interior : body;
@@ -119,15 +134,39 @@ namespace OpenPlane.Mod
                     target.Add(key, P(t[i]), P(t[i + 1]), P(t[i + 2]));
                 }
             }
-            foreach (var w in design.Wings)
+            Vector3 V3(double[] p) => new Vector3((float)p[0], (float)p[1], (float)p[2]);
+            for (int wi = 0; wi < design.Wings.Count; wi++)
             {
+                var w = design.Wings[wi];
                 int wk = w.Material ?? PaintKey;
-                AddSlab(wings, wk, w.RootLeading, w.RootTrailing, w.TipTrailing, w.TipLeading, w.Up);
-                foreach (var s in w.Surfaces) AddSlab(wings, s.Material ?? wk, s.RootLeading, s.RootTrailing, s.TipTrailing, s.TipLeading, w.Up);
+                bool wholePanel = w.Inputs != null && w.Inputs.Count > 0;
+                // An all-moving panel turns about its quarter-chord line, its strips with it.
+                var panelB = wings;
+                if (wholePanel)
+                {
+                    panelB = new Builder();
+                    moving.Add(($"w{wi}", panelB, Vector3.Lerp(V3(w.RootLeading), V3(w.RootTrailing), 0.25f), Vector3.Lerp(V3(w.TipLeading), V3(w.TipTrailing), 0.25f)));
+                }
+                AddSlab(panelB, wk, w.RootLeading, w.RootTrailing, w.TipTrailing, w.TipLeading, w.Up);
+                for (int si = 0; si < w.Surfaces.Count; si++)
+                {
+                    var s = w.Surfaces[si];
+                    var target = panelB;
+                    if (!wholePanel && s.Role != "fixed" && s.Inputs != null && s.Inputs.Count > 0)
+                    {
+                        // A hinged strip turns about its edge against the wing: its leading edge, or a slat's trailing edge.
+                        target = new Builder();
+                        bool lead = s.Edge == "leading";
+                        moving.Add(($"w{wi}s{si}", target, V3(lead ? s.RootTrailing : s.RootLeading), V3(lead ? s.TipTrailing : s.TipLeading)));
+                    }
+                    AddSlab(target, s.Material ?? wk, s.RootLeading, s.RootTrailing, s.TipTrailing, s.TipLeading, w.Up);
+                }
             }
             var all = new Bounds(); bool any = false;
-            foreach (var b in new[] { body, interior, wings })
+            foreach (var b in new[] { body, interior, wings }.Concat(moving.Select(m => m.b)))
                 foreach (var p in b.V) { if (!any) { all = new Bounds(p, Vector3.zero); any = true; } else all.Encapsulate(p); }
+            LastMoving = moving.Select(m => new MovingPiece { Key = m.key, Group = m.b.Build($"{design.Name} surface {m.key} (OpenPlane)", all), HingeA = m.a, HingeB = m.c })
+                               .Where(m => m.Group.Mesh != null).ToList();
             return (body.Build(design.Name + " (OpenPlane)", all), interior.Build(design.Name + " interior (OpenPlane)", all), wings.Build(design.Name + " wings (OpenPlane)", all));
         }
 
@@ -454,7 +493,11 @@ namespace OpenPlane.Mod
                     }
                     case "screen":
                         Part(root, "frame", Box(new Vector3(size * 1.1f, size * 0.85f, 0.01f)), bezel, new Vector3(0, 0, -0.006f), Quaternion.identity);
-                        Part(root, "display", Box(new Vector3(size, size * 0.75f, 0.002f)), screen, Vector3.zero, Quaternion.identity);
+                        // A screen with a page is dark behind it, so the page reads; a plain screen glows green.
+                        Part(root, "display", Box(new Vector3(size, size * 0.75f, 0.002f)), string.IsNullOrEmpty(ins.Reads) ? screen : face, Vector3.zero, Quaternion.identity);
+                        if (!string.IsNullOrEmpty(ins.Reads))
+                            try { AddScreenPage(root, ins.Reads!, size, mats); }
+                            catch (Exception e) { Plugin.Log.LogWarning($"Cockpit display \"{ins.Name}\" left plain: {e.Message}"); }
                         break;
                     case "hud":
                         // A see-through combiner glass with a thin glowing frame: the game's own HUD symbols still show.
@@ -467,6 +510,8 @@ namespace OpenPlane.Mod
                     case "lever":
                         Part(root, "stem", Box(new Vector3(0.01f, 0.01f, size)), bezel, new Vector3(0, 0, size / 2), Quaternion.identity);
                         Part(root, "knob", Box(new Vector3(0.025f, 0.025f, 0.025f)), marks, new Vector3(0, 0, size), Quaternion.identity);
+                        if (!string.IsNullOrEmpty(ins.Reads))
+                            try { AddLeverMotion(root, ins.Reads!); } catch (Exception e) { Plugin.Log.LogWarning($"Lever \"{ins.Name}\" left still: {e.Message}"); }
                         break;
                 }
                 n++;
@@ -661,6 +706,8 @@ namespace OpenPlane.Mod
             catch { enabled = false; }
         }
 
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Aircraft, Turbojet[]> _jetTable = new System.Runtime.CompilerServices.ConditionalWeakTable<Aircraft, Turbojet[]>();
+
         internal static float Value(Aircraft a, string reads, out float lo, out float hi)
         {
             lo = 0; hi = 1;
@@ -675,6 +722,9 @@ namespace OpenPlane.Mod
                     lo = 0; hi = 110;
                     float best = 0;
                     if (a.engines != null) foreach (var e in a.engines) if (e != null) best = Mathf.Max(best, e.GetRPMRatio());
+                    // Jet engines (Turbojet) never join aircraft.engines (only propellers, fans and rotors do): read them directly.
+                    var jets = _jetTable.GetValue(a, x => x.GetComponentsInChildren<Turbojet>(true));
+                    foreach (var j in jets) if (j != null) best = Mathf.Max(best, j.GetRPMRatio());
                     return best * 100;
                 }
                 case "throttle": return a.controlInputs.throttle;

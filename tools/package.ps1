@@ -5,7 +5,7 @@
 #                                     BepInEx/plugins/<NOMNOM id> itself. Same name every release: NOMNOM picks the asset
 #                                     by name (releaseAssetName).
 #   Meta-OpenPlane-<version>.zip      the Thunderstore package (mod + Blueprinter, which isn't on Thunderstore)
-#   OpenPlane-starter-planes.zip      the three starter planes as a plane pack (the same ones the app adds)
+#   OpenPlane-starter-planes.zip      the four starter planes as a plane pack (the same ones the app adds)
 #   com.meta.openplane.json           the NOMNOM manifest for this release (hash filled in), for the NOMNOM pull request
 #   SHA256SUMS.txt                    checksums of the zips
 # Needs the .NET 10 SDK, and the game's DLLs in lib/game plus Blueprinter in lib/blueprinter (see README).
@@ -150,7 +150,7 @@ The OpenPlane app (in the main OpenPlane download, for Windows) does all of this
 "@ | Set-Content -Encoding utf8 (Join-Path $modPlugins "README.txt")
 
 # ------------------------------------------------------------------ the starter planes as a plane pack
-# The same three planes the app's "Add starter planes" makes (fixed ids, so everyone's copies match in multiplayer).
+# The same four planes the app's "Add starter planes" makes (fixed ids, so everyone's copies match in multiplayer).
 # For players without the app (Steam Deck, servers): unzip into the planes folder.
 & $Dotnet build src\OpenPlane.Cli\OpenPlane.Cli.csproj -c Release
 if ($LASTEXITCODE -ne 0) { throw "Building the command-line tool failed." }
@@ -158,7 +158,7 @@ $starterStage = Join-Path $out "starter-stage"
 if (Test-Path $starterStage) { Remove-Item $starterStage -Recurse -Force }
 & (Join-Path $root "src\OpenPlane.Cli\bin\Release\net10.0\openplane.exe") starters -o $starterStage | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "Making the starter planes failed (or their flight check found a problem)." }
-if ((Get-ChildItem $starterStage -Filter *.oplane).Count -ne 3) { throw "The starter pack should hold 3 planes." }
+if ((Get-ChildItem $starterStage -Filter *.oplane).Count -ne 4) { throw "The starter pack should hold 4 planes." }
 
 # ------------------------------------------------------------------ the Thunderstore package (r2modman / Thunderstore Mod Manager)
 # Thunderstore puts plugins/<anything> in BepInEx/plugins/Meta-OpenPlane/. Blueprinter isn't on Thunderstore, so it is

@@ -42,7 +42,8 @@ x right, y up, z forward. Points are `[x, y, z]` arrays in the plane's own space
       "inputs": [{ "axis": "roll", "gain": 20 }]   // pitch, roll, yaw, flaps, brake, throttle, gear
     }],
     "inputs": [{ "axis": "pitch", "gain": 20 }],  // optional: the whole panel turns (all-moving tail, stabilator, turning fin)
-    "min_deg": -20, "max_deg": 20      // its travel; all three are left out for a fixed panel
+    "min_deg": -20, "max_deg": 20,     // its travel; these are left out for a fixed panel
+    "servo_deg_per_sec": 60            // optional: how fast it turns (0 or absent: the stock plane's speed)
   }],
   "fuselages": [{ "name": "Fuselage 1", "mesh_index": 0, "bounds_min": [..], "bounds_max": [..],
                   "frontal_area": 1.2, "wetted_area": 30.5, "skin_thickness": 0.006 }],
@@ -68,7 +69,9 @@ x right, y up, z forward. Points are `[x, y, z]` arrays in the plane's own space
     "color": [0.7, 0.7, 0.7, 1], "metallic": 1, "smoothness": 0.15, "finish": null }],   // finish: an original textured finish, drawn as colour
   "instruments": [{                   // optional: cockpit instruments OpenPlane draws and animates
     "name": "Speed", "kind": "gauge", // gauge, attitude, compass, screen, hud, mirror, lever
-    "reads": "airspeed",               // gauges: airspeed (km/h), altitude (m), radar-altitude, vertical-speed (m/s), rpm (%), throttle, fuel (0-1), g, aoa (deg), heading, clock
+    "reads": "airspeed",               // gauges: airspeed (km/h), altitude (m), radar-altitude, vertical-speed (m/s), rpm (%), throttle, fuel (0-1), g, aoa (deg), heading, clock;
+                                       // screens: the live page they show (flight, engine or nav; absent: a plain display);
+                                       // levers: what moves them (throttle, gear or stick; absent: they stay still)
     "position": [..], "rotation": [x, y, z, w],   // the face looks along rotation applied to +y; 12 o'clock is rotation applied to +z
     "size": 0.08, "min": 0, "max": 800, "min_deg": 30, "max_deg": 330 }],   // needle angles clockwise from 12 o'clock
   "lights": [{ "name": "Left wingtip", "kind": "nav",   // nav, strobe, beacon (blinking), landing, strip
@@ -84,12 +87,16 @@ Engine `type` is one of `turbofan`, `turbojet`, `piston-prop`, `turboprop`, `ele
   the corners; converted planes keep Flyout's own twist numbers there, which Flyout stores apart from the corners (its
   unit isn't confirmed), so converted wings are untwisted.
 - **Stats** are recomputed by every reader from the shape; a file's `stats` are never used.
-- **In the OpenPlane 0.1 mod**, a plane is lined up with its stock plane by centre of gravity, and the stock plane's
-  landing gear stays where it is: `gear` positions are used for the flight estimates (balance, ground clearance) but
-  don't move anything in the game yet. `hardpoints` do: the stock weapon stations move onto them (stations with no
-  hardpoint aren't offered), and the stock guns fire from `guns` positions. The cockpit eye does too: the game's
-  cockpit view sits there (unless `own_view` is false), and the plane's colours, glass, interior, instruments and
-  lights are drawn (unless `paint.stock_livery` is true).
+- **In the OpenPlane 0.1 mod**, a plane is lined up with its stock plane by centre of gravity. The stock plane's
+  landing-gear legs move under the `gear` wheels (across, and the nose leg also along the plane) and steer and brake as
+  `steerable` and `brakes` say; wheel size, strut length and retraction stay the stock plane's. The stock weapon
+  stations move onto the `hardpoints` (stations with no hardpoint aren't offered), and the stock guns fire from `guns`
+  positions at their `rounds_per_minute`. The stock control surfaces take the travel (`min_deg`, `max_deg`, input
+  `gain`s) and `servo_deg_per_sec` of the design's surfaces and all-moving panels riding on them, within 0.4 to 2 times
+  the stock travel; `handling.g_limit` and `handling.aoa_limit_deg` set the fly-by-wire's limits; engines give
+  `max_thrust_n` dry and `afterburner_thrust_n` with afterburner. The cockpit eye sets the game's cockpit view (unless
+  `own_view` is false), and the plane's colours, glass, interior, instruments and lights are drawn (unless
+  `paint.stock_livery` is true).
 - Files without `materials`, `instruments`, `lights`, `eye` or `stock_livery` are read exactly as before: those
   fields are left out of a file when unused.
 
@@ -153,6 +160,7 @@ made from it by OpenPlane.Core (`DesignGenerator`), so other tools only need `ai
   }],
   "wings": [{ "kind": "wing", "root": [0.5, 0, 1], "span": 4, "root_chord": 2, "tip_chord": 1, "sweep_deg": 10,
               "dihedral_deg": 3, "incidence_deg": 1, "twist_deg": 0, "vertical": false, "mirror": true,
+              "moving": { "type": "ruddervator", "min_deg": -25, "max_deg": 25, "inputs": null },   // optional: the whole panel turns, like a surface of this type
               "surfaces": [{ "type": "aileron", "edge": "trailing", "from_pct": 58, "to_pct": 95, "chord_pct": 25,
                              "min_deg": null, "max_deg": null, "servo_deg_per_sec": null,
                              "inputs": null }] }],   // null = the type's defaults; input gains are for the +x side

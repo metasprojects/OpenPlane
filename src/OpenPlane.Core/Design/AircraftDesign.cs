@@ -99,11 +99,14 @@ namespace OpenPlane.Core.Design
         /// <summary>Travel of an all-moving panel (degrees), when it has inputs.</summary>
         public double MinDeg { get; set; }
         public double MaxDeg { get; set; }
+        /// <summary>How fast an all-moving panel turns (degrees per second); 0 keeps the stock plane's speed.</summary>
+        public double ServoDegPerSec { get; set; }
 
-        // A fixed panel (the usual case) writes none of the three, so files stay as they were before panels could move.
+        // A fixed panel (the usual case) writes none of these, so files stay as they were before panels could move.
         public bool ShouldSerializeInputs() => Inputs != null && Inputs.Count > 0;
         public bool ShouldSerializeMinDeg() => ShouldSerializeInputs();
         public bool ShouldSerializeMaxDeg() => ShouldSerializeInputs();
+        public bool ShouldSerializeServoDegPerSec() => ShouldSerializeInputs() && ServoDegPerSec > 0;
     }
 
     /// <summary>A control surface, flap or slat attached to a wing panel's edge.</summary>

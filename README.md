@@ -25,7 +25,7 @@ OpenPlane is a free, open-source app for Nuclear Option planes. It does three th
   example your Documents folder) and run `OpenPlane.exe`. Nothing else to install: .NET is included. The app isn't code
   signed yet, so Windows SmartScreen may say "Windows protected your PC": choose **More info**, then **Run anyway**. Each
   release lists the SHA-256 of its files in `SHA256SUMS.txt`, so you can check your download.
-- **Starter planes without the app:** `OpenPlane-starter-planes.zip` holds the three starter planes; unzip it into the
+- **Starter planes without the app:** `OpenPlane-starter-planes.zip` holds the four starter planes; unzip it into the
   game's planes folder (below).
 - **The mod only (NOMM, Steam Deck, servers):** with NOMM, install OpenPlane from its list once OpenPlane is in its
   registry (NOMNOM); NOMM adds Blueprinter too and uses `OpenPlane-nomm.zip` by itself. By hand: unzip
@@ -38,8 +38,8 @@ OpenPlane is a free, open-source app for Nuclear Option planes. It does three th
 1. Open the OpenPlane app. On first run it finds Nuclear Option and offers to install the OpenPlane mod
    (it installs BepInEx 5 and Blueprinter if you don't have them, or works alongside NOMM if you use it). A "Getting
    started" checklist on My planes walks you from there to your first flight and your first shared plane.
-   No Flyout planes? **Add starter planes** gives you three ready-made ones (the OP-1 Wren trainer, OP-2 Kite fighter
-   and OP-3 Heron bomber). They are the same for everyone, so they also match in multiplayer.
+   No Flyout planes? **Add starter planes** gives you four ready-made ones (the OP-1 Wren trainer, OP-2 Kite fighter,
+   OP-3 Heron bomber and OP-4 Lanner strike fighter). They are the same for everyone, so they also match in multiplayer.
 2. **Convert:** pick Flyout planes and press Convert. Each one gets a short report of what changed. Converting a craft
    again makes a new plane, unless you tick "Replace": then the plane converted from it before moves to OpenPlane's
    "Deleted planes" folder (you can bring it back). Planes you built are never replaced.
@@ -88,21 +88,27 @@ button, so a mouse or the Steam Deck's trackpads are enough. Press `?` in the bu
 
 In the game your plane looks as you made it: its own colours, finishes and glass (or the stock plane's livery, if you
 tick "Use the stock livery"), its cockpit interior, working instruments (gauges, horizon and compass read the real
-plane), its lights (strobes and beacons blink), and you fly from its own cockpit, at the eye position you set.
+plane; screens can show a live flight, engine or navigation page; levers can move with the throttle, the gear or the
+stick), its lights (strobes and beacons blink), and you fly from its own cockpit, at the eye position you set.
 Converted Flyout planes keep their colours, glass, cut-outs, shape parts, instruments and lights; OpenPlane draws its own
 instruments and cockpit seat in place of Flyout's models.
 
 Weapons hang where you put hardpoints: the stock plane's weapon stations move onto them, stations with no hardpoint
 aren't offered (a plane without hardpoints carries only its guns), and stores too heavy for your plane's weight aren't
-offered either. The stock guns fire from your guns' positions.
+offered either. The stock guns fire from your guns' positions, at your guns' rate of fire.
+
+It flies as you set it up: its control surfaces move as far and as fast as set in the builder (on the stock plane's
+surfaces they ride on, within 0.4 to 2 times the stock travel), wings can move as a whole (stabilators, all-moving
+V-tails, turning fins), the fly-by-wire keeps to your g and angle-of-attack limits, its engines give your dry and
+afterburner thrust, and each landing-gear leg steers and brakes as you set it (planes converted from Flyout keep the
+stock plane's steering and brakes).
 
 The stock plane's landing-gear legs stand under your wheels: moved sideways, and the nose leg also along the plane; the
 wheels keep the stock plane's size and height.
 
-Some settings are saved with the plane but the OpenPlane mod doesn't use them in the game yet: control-surface travel
-and input gains, the angle-of-attack limit, wheel size and height, gear steering, brakes, retraction and travel, which
-weapon kinds a station allows, gun calibre and rate of fire, and sensors (the stock plane's are used). The builder marks
-them "not in game yet".
+Some settings are saved with the plane but the OpenPlane mod doesn't use them in the game yet: wheel size and height,
+gear retraction and travel, which weapon kinds a station allows, gun calibre, and sensors (the stock plane's are used).
+The builder marks them "not in game yet".
 
 Known limitation: an OpenPlane plane keeps its stock plane's hit boxes and damage parts, so in combat it is hit where
 the stock plane's wings, tail and engines would be, not exactly where its own shape is.
@@ -161,7 +167,7 @@ mod's log lines, with your Windows user name and folders replaced so it's safe t
 ## Building
 
 You need the .NET 10 SDK. Building the mod also needs references from your own copy of Nuclear Option:
-copy `Assembly-CSharp.dll`, `Mirage.dll`, `UniTask.dll` and `Newtonsoft.Json.dll` from
+copy `Assembly-CSharp.dll`, `Mirage.dll`, `UniTask.dll`, `Newtonsoft.Json.dll`, `Unity.TextMeshPro.dll` and `UnityEngine.UI.dll` from
 `<game>\NuclearOption_Data\Managed` into `lib/game`, and the Blueprinter DLL into `lib/blueprinter`.
 These files belong to their owners and are never committed.
 

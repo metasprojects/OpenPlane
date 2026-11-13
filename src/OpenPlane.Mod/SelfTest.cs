@@ -15,7 +15,7 @@ namespace OpenPlane.Mod
     /// and writes what happened (altitude, speed, crashes) to BepInEx/OpenPlane-selftest.txt.
     /// Start the game with: -autoHost -mission "Free Flight - Heartland" -socket Offline -state SinglePlayer
     /// </summary>
-    internal sealed class SelfTest : MonoBehaviour
+    internal sealed partial class SelfTest : MonoBehaviour
     {
         private bool _started, _toldNotSinglePlayer;
         private readonly StringBuilder _report = new StringBuilder();
@@ -72,7 +72,8 @@ namespace OpenPlane.Mod
                 _film = new SelfTestFilm();
                 foreach (var loop in _film.Loops()) StartCoroutine(loop);
             }
-            Line($"OpenPlane self-test {DateTime.Now:yyyy-MM-dd HH:mm:ss}, mission \"{MissionManager.CurrentMission?.Name}\", {Registry.Planes.Count} OpenPlane planes");
+            Line($"OpenPlane self-test {DateTime.Now:yyyy-MM-dd HH:mm:ss}, mission \"{MissionManager.CurrentMission?.Name}\", {Registry.Planes.Count} OpenPlane planes, " +
+                 $"testing {Selected().Count} ({string.Join(", ", Selected().Select(p => p.Definition.unitName))}), phases {Plugin.SelfTestPhases.Value}");
 
             var hq = FactionRegistry.HQLookup.Values.FirstOrDefault(h => h != null);
             var airbases = FactionRegistry.airbaseLookup.Values.Where(a => a != null).ToList();
@@ -81,7 +82,7 @@ namespace OpenPlane.Mod
 
             // ---- air start: OpenPlane planes and their stock donors side by side
             var defs = new List<(AircraftDefinition def, string label)>();
-            foreach (var p in Registry.Planes)
+            foreach (var p in Selected("air").Where(_ => Phase("air")))
             {
                 defs.Add((p.Definition, "OpenPlane " + p.Definition.unitName));
                 if (!defs.Any(d => d.def == p.Donor)) defs.Add((p.Donor, "stock " + p.Donor.unitName));
@@ -141,7 +142,7 @@ namespace OpenPlane.Mod
             //      hangar takes right now is tried again every 15 s.
             var usedCount = new Dictionary<Airbase, int>();
             var runs = new List<Takeoff>();
-            var waiting = Registry.Planes.ToList();
+            var waiting = Selected("runway").Where(_ => Phase("runway")).ToList();
             var known = new HashSet<Aircraft>(UnitRegistry.allAircraft.Where(a => a != null));
             float phase = Time.time, lastTry = -999f;
             const float window = 300f, phaseLimit = 720f;
@@ -154,7 +155,8 @@ namespace OpenPlane.Mod
                     {
                         Airbase? used = null;
                         // Our side's airbases first (a plane spawned at another side's base flies for that side), least used first.
-                        var order = airbases.OrderBy(a => a.CurrentHQ == hq ? 0 : 1).ThenBy(a => usedCount.TryGetValue(a, out var n) ? n : 0).ToList();
+                        // Only our side's airbases (at the enemy's the AI waits for a takeoff clearance that never comes), least used first.
+                        var order = airbases.Where(a => a.CurrentHQ == hq || !airbases.Any(b => b.CurrentHQ == hq)).OrderBy(a => usedCount.TryGetValue(a, out var n) ? n : 0).ToList();
                         foreach (var ab in order)
                         {
                             try
@@ -235,11 +237,14 @@ namespace OpenPlane.Mod
                 Trace(t);
             }
             foreach (var p in waiting) Line($"  takeoff {p.Definition.unitName}: no airbase would spawn it");
-            int planes = Registry.Planes.Count;
+            int planes = Phase("air") ? Selected("air").Count : Selected("runway").Count;
             // Flying = not lost and still clear of the ground at the end (a plane gliding in counts as down).
             int flying = tracked.Count(t => !t.Lost && t.LastRadarAlt > 20f && t.Label.StartsWith("OpenPlane "));
             int landing = tracked.Count(t => !t.Lost && !(t.LastRadarAlt > 20f) && t.Label.StartsWith("OpenPlane "));
             Line($"SCORE air start {flying}/{planes} flying" + (landing > 0 ? $" and {landing} landing or landed" : "") + $", runway takeoff {airborne}/{planes} airborne");
+
+            if (Phase("landing")) yield return StartCoroutine(LandingPhase(hq, ours));
+            if (Phase("weapons")) yield return StartCoroutine(WeaponsPhase(hq, ours));
 
             if (_film != null) yield return StartCoroutine(Showcase(hq, ours));
 
@@ -261,7 +266,7 @@ namespace OpenPlane.Mod
             var film = _film!;
             Line("showcase: filming each plane on its own");
             int i = 0;
-            foreach (var p in Registry.Planes.ToList())
+            foreach (var p in Selected("air"))
             {
                 var def = p.Definition;
                 var at = ours[i++ % ours.Count];

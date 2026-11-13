@@ -229,7 +229,7 @@ public class ApiSmokeTests : IAsyncLifetime
     public async Task TemplatesBuildSaveAutoGearAndDraft()
     {
         var templates = await Get("/api/templates");
-        Assert.Equal(new[] { "trainer", "fighter", "bomber", "blank" }, templates.Select(t => (string)t["id"]!));
+        Assert.Equal(new[] { "trainer", "fighter", "bomber", "strike", "blank" }, templates.Select(t => (string)t["id"]!));
         Assert.Equal(HttpStatusCode.OK, (await _http.GetAsync("/api/templates/fighter/thumb")).StatusCode);
         var spec = (await Get("/api/templates/fighter"))["spec"]!;
         var a = await Send(HttpMethod.Post, "/api/analyze", new JObject { ["spec"] = spec, ["mesh_set"] = "", ["include_design"] = true });
@@ -817,15 +817,15 @@ public class ApiSmokeTests : IAsyncLifetime
     public async Task StarterPlanesAreTheSameForEveryone()
     {
         var first = (await Send(HttpMethod.Post, "/api/planes/starters"))["results"]!.ToArray();
-        Assert.Equal(new[] { "OP-1 Wren", "OP-2 Kite", "OP-3 Heron" }, first.Select(r => (string)r["plane"]!["name"]!));
+        Assert.Equal(new[] { "OP-1 Wren", "OP-2 Kite", "OP-3 Heron", "OP-4 Lanner" }, first.Select(r => (string)r["plane"]!["name"]!));
         Assert.All(first, r => Assert.Equal("added", (string)r["outcome"]!));
-        Assert.Equal(new[] { "57a47e4000000001", "57a47e4000000002", "57a47e4000000003" }, first.Select(r => (string)r["plane"]!["design_id"]!));
+        Assert.Equal(new[] { "57a47e4000000001", "57a47e4000000002", "57a47e4000000003", "57a47e4000000004" }, first.Select(r => (string)r["plane"]!["design_id"]!));
         // Adding them again changes nothing.
         var again = (await Send(HttpMethod.Post, "/api/planes/starters"))["results"]!.ToArray();
         Assert.All(again, r => Assert.Equal("same", (string)r["outcome"]!));
-        Assert.Equal(3, Directory.GetFiles(Planes, "*.oplane").Length);
+        Assert.Equal(Templates.Starters.Count, Directory.GetFiles(Planes, "*.oplane").Length);
         // Exactly the plane the shared code makes (so the release's starter pack and every app agree).
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < Templates.Starters.Count; i++)
         {
             var spec = Templates.Starter(i);
             var made = DesignGenerator.Generate(spec, new List<MeshData>());

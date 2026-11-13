@@ -6,7 +6,7 @@
     <Copyright>Copyright (c) 2026 Meta</Copyright>
     <!-- The one place the version is set. OpenPlane.Core turns it into OpenPlane.Core.BuildInfo.Version (a constant the
          app, the mod and the converter use), the assemblies get it as their version, and tools/package.ps1 reads it. -->
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>

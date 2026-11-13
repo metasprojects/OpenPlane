@@ -423,7 +423,7 @@ public sealed class PlaneLibrary
     }
 
     /// <summary>
-    /// Adds the three starter planes (trainer, fighter, bomber with fixed ids, see Templates.Starters). A starter that is
+    /// Adds the starter planes (trainer, fighter, bomber and strike fighter with fixed ids, see Templates.Starters). A starter that is
     /// already in the folder (by its id) is left as it is.
     /// </summary>
     public List<ImportOutcome> AddStarters()

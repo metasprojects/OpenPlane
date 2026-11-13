@@ -45,11 +45,22 @@ namespace OpenPlane.Core.Design
         public static readonly string[] Kinds = { "gauge", "attitude", "compass", "screen", "hud", "mirror", "lever" };
         /// <summary>What a gauge shows: airspeed, altitude, radar-altitude, vertical-speed, rpm, throttle, fuel, g, aoa, heading, clock.</summary>
         public static readonly string[] Readings = { "airspeed", "altitude", "radar-altitude", "vertical-speed", "rpm", "throttle", "fuel", "g", "aoa", "heading", "clock" };
+        /// <summary>What a screen shows: a flight page (attitude, speed, altitude, heading, g), an engine page or a navigation page.</summary>
+        public static readonly string[] ScreenPages = { "flight", "engine", "nav" };
+        /// <summary>What moves a lever: the throttle, the landing gear or the stick (pitch and roll).</summary>
+        public static readonly string[] LeverMotions = { "throttle", "gear", "stick" };
+
+        /// <summary>True when <paramref name="reads"/> means something for an instrument of this kind.</summary>
+        public static bool ReadsFits(string? kind, string? reads)
+            => reads != null && (kind == "screen" ? System.Array.IndexOf(ScreenPages, reads) >= 0
+                               : kind == "lever" ? System.Array.IndexOf(LeverMotions, reads) >= 0
+                               : System.Array.IndexOf(Readings, reads) >= 0);
 
         public string? Id { get; set; }
         public string Name { get; set; } = "Gauge";
         public string Kind { get; set; } = "gauge";
-        /// <summary>For gauges: what the needle shows (see <see cref="Readings"/>).</summary>
+        /// <summary>For gauges: what the needle shows (see <see cref="Readings"/>); for screens, the page they show
+        /// (<see cref="ScreenPages"/>); for levers, what moves them (<see cref="LeverMotions"/>).</summary>
         public string? Reads { get; set; }
         /// <summary>The face's centre (aircraft space); the face looks along the rotation's forward axis.</summary>
         public double[] Position { get; set; } = new double[3];

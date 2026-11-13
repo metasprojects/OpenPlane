@@ -35,6 +35,8 @@ namespace OpenPlane.Mod
         internal static ConfigEntry<bool> SelfTestQuit = null!;
         internal static ConfigEntry<bool> SelfTestVideo = null!;
         internal static ConfigEntry<string> SelfTestVideoFolder = null!;
+        internal static ConfigEntry<string> SelfTestOnly = null!;
+        internal static ConfigEntry<string> SelfTestPhases = null!;
         internal static ConfigEntry<bool> TestFlyShot = null!;
 
         /// <summary>True once OpenPlane's planes are registered (or registration failed and was skipped).</summary>
@@ -64,6 +66,10 @@ namespace OpenPlane.Mod
                 "While the self-test runs, film the planes (takeoff runs, then each plane on its own) as 1920x1080 JPG frames, one folder per clip.");
             SelfTestVideoFolder = Config.Bind("Developer", "SelfTestVideoFolder", "",
                 "Folder for the self-test's video frames (empty: BepInEx/OpenPlane-video).");
+            SelfTestOnly = Config.Bind("Developer", "SelfTestOnly", "",
+                "Comma-separated parts of plane names: the self-test covers only OpenPlane planes whose name contains one (empty: all).");
+            SelfTestPhases = Config.Bind("Developer", "SelfTestPhases", "air,runway",
+                "Comma-separated self-test phases: air (air start), runway (AI takeoff), landing (AI lands at an airbase), weapons (fires every store and the guns at targets).");
             TestFlyShot = Config.Bind("Developer", "TestFlyShot", false,
                 "After a test flight starts, save a screenshot to BepInEx/OpenPlane-testfly.png and log who flies the plane.");
             HostRules.Bind(Config);

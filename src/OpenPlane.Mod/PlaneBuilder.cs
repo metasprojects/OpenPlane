@@ -248,6 +248,25 @@ namespace OpenPlane.Mod
             }
             var bodyRenderers = Add(bodyG, "OpenPlane Body", false);
             var wingRenderers = Add(wingsG, "OpenPlane Wings", false);
+            // Control surfaces and all-moving panels on hinges of their own, so they can turn (linked after the lift step).
+            _movingVisuals.Clear();
+            foreach (var piece in DesignVisuals.LastMoving)
+            {
+                if (piece.Group.Mesh == null) continue;
+                var mid = (piece.HingeA + piece.HingeB) / 2;
+                var pivot = new GameObject("OpenPlane Surface " + piece.Key).transform;
+                pivot.SetParent(visual.transform, false);
+                pivot.localPosition = mid;
+                var shifted = DesignVisuals.Shifted(piece.Group.Mesh, -mid);
+                var g = new DesignVisuals.Group { Mesh = shifted };
+                g.Keys.AddRange(piece.Group.Keys);
+                foreach (var r in Add(g, "surface " + piece.Key, false))
+                {
+                    r.transform.SetParent(pivot, false);
+                    wingRenderers.Add(r);
+                }
+                _movingVisuals[piece.Key] = (pivot, piece.HingeB - piece.HingeA);
+            }
             var interiorRenderers = Add(interiorG, "OpenPlane Interior", !stockLivery);
             // From the design's own cockpit the inside of the hull shows (as in Flyout), in a dark cockpit grey.
             if (ownView && bodyG.Mesh != null && mats.CanPaint)
@@ -260,8 +279,10 @@ namespace OpenPlane.Mod
             int instruments = 0, lamps = 0;
             if (mats.CanPaint)
             {
-                instruments = DesignVisuals.AddInstruments(visual.transform, design, mats);
-                lamps = DesignVisuals.AddLights(visual.transform, design, mats);
+                try { instruments = DesignVisuals.AddInstruments(visual.transform, design, mats); }
+                catch (Exception e) { notes.Add("instruments FAILED: " + e.Message); }
+                try { lamps = DesignVisuals.AddLights(visual.transform, design, mats); }
+                catch (Exception e) { notes.Add("lights FAILED: " + e.Message); }
             }
             if (!stockLivery) Change("It is drawn in its own colours, glass and finishes (the stock livery isn't used; tick \"Use the stock livery\" in the builder to use it).");
             if (instruments > 0) Change($"{instruments} cockpit instruments work: gauges, horizon and compass read the plane's real speed, height, engine and attitude.");
@@ -327,7 +348,7 @@ namespace OpenPlane.Mod
             // where the pilot needs them). Landing gear, weapon stations and the guns the design places keep working and stay
             // visible; the stock propeller (the design draws its own) and the gear once stowed are hidden in flight by
             // StockPieces, since the game switches those renderers itself.
-            var shape = DesignShape.From(new[] { body, wings, inside }, offset);
+            var shape = DesignShape.From(new[] { body, wings, inside }.Concat(DesignVisuals.LastMoving.Select(p => p.Group.Mesh)), offset);
             if (shape != null) _stockPiecesPass = () =>
             {
                 var root = prefab.transform;
@@ -441,6 +462,12 @@ namespace OpenPlane.Mod
             public Vector3 Point;   // aerodynamic centre in prefab root space
             public Vector3 Up;
             public HashSet<string> Axes = new HashSet<string>();
+            // A control's inputs (axis -> degrees at full input), its travel limit and servo speed (0 = not set).
+            public Dictionary<string, double> Gains = new Dictionary<string, double>();
+            public double Travel;
+            public double Servo;
+            /// <summary>Which wing panel ("w3") or strip ("w3s1") it is, to find its moving visual.</summary>
+            public string Key = "";
         }
 
         private sealed class DonorLift
@@ -453,6 +480,8 @@ namespace OpenPlane.Mod
             public double Area;
             public Vector3 WeightedPoint;
             public Vector3 WeightedUp;
+            /// <summary>The design's control pieces that ride on this stock part.</summary>
+            public List<DesignLift> Matched = new List<DesignLift>();
         }
 
         /// <summary>
@@ -543,14 +572,26 @@ namespace OpenPlane.Mod
 
             // Design lifting elements: each panel and each control surface, at its quarter-chord point.
             var elements = new List<DesignLift>();
-            foreach (var w in design.Wings)
+            for (int wi = 0; wi < design.Wings.Count; wi++)
             {
+                var w = design.Wings[wi];
                 var panelElement = Element(w.RootLeading, w.RootTrailing, w.TipTrailing, w.TipLeading, w.Up, null, toRoot);
+                panelElement.Key = $"w{wi}";
                 // An all-moving panel (stabilator, turning fin) is a control surface as a whole.
-                if (w.Inputs != null) foreach (var i in w.Inputs) panelElement.Axes.Add(i.Axis);
+                if (w.Inputs != null && w.Inputs.Count > 0)
+                {
+                    foreach (var i in w.Inputs) { panelElement.Axes.Add(i.Axis); AddGain(panelElement, i.Axis, i.Gain); }
+                    panelElement.Travel = System.Math.Max(System.Math.Abs(w.MinDeg), System.Math.Abs(w.MaxDeg));
+                    panelElement.Servo = w.ServoDegPerSec;
+                }
                 elements.Add(panelElement);
-                foreach (var s in w.Surfaces)
-                    elements.Add(Element(s.RootLeading, s.RootTrailing, s.TipTrailing, s.TipLeading, w.Up, s, toRoot));
+                for (int si = 0; si < w.Surfaces.Count; si++)
+                {
+                    var s = w.Surfaces[si];
+                    var e = Element(s.RootLeading, s.RootTrailing, s.TipTrailing, s.TipLeading, w.Up, s, toRoot);
+                    e.Key = $"w{wi}s{si}";
+                    elements.Add(e);
+                }
             }
             elements.RemoveAll(e => !(e.Area >= 1e-4) || !Finite(e.Point) || !Finite(e.Up));
             if (elements.Count == 0) { notes.Add("the design has no lifting area; lift unchanged"); return; }
@@ -595,6 +636,7 @@ namespace OpenPlane.Mod
                     if (score < bestScore) { bestScore = score; best = d; }
                 }
                 if (best == null) { unmatched++; continue; }
+                if (best.IsControl && e.Gains.Count > 0) best.Matched.Add(e);
                 best.Area += e.Area;
                 best.WeightedPoint += e.Point * (float)e.Area;
                 best.WeightedUp += e.Up * (float)e.Area;
@@ -644,6 +686,8 @@ namespace OpenPlane.Mod
             }
             if (unmatched > 0)
                 Warn($"{unmatched} pieces of the wings had no matching lifting part on the {_donorName}, so they give no lift in the game. Joining small pieces into bigger panels in the builder helps.");
+            ApplyControlTravel(donors, controls, notes);
+            LinkMovingSurfaces(root, donors, controls, notes);
             notes.Add($"lift retuned on {moved} of {donors.Count} stock parts ({before:0.#} -> {after:0.#} m2" + (unmatched > 0 ? $", {unmatched} design pieces unmatched" : "")
                       + (capped > 0 ? $", {capped} control-surface lift offsets capped at {MaxControlLiftOffset} m" : "") + ")");
         }
@@ -655,8 +699,121 @@ namespace OpenPlane.Mod
             var lead = (toRoot(rl) + toRoot(tl)) / 2; var trail = (toRoot(rt) + toRoot(tt)) / 2;
             var point = s == null ? Vector3.Lerp(trail, lead, 0.75f) : c;   // quarter chord for panels
             var e = new DesignLift { Area = area, Point = point, Up = new Vector3((float)up[0], (float)up[1], (float)up[2]).normalized };
-            if (s != null) foreach (var i in s.Inputs) e.Axes.Add(i.Axis);
+            if (s != null)
+            {
+                foreach (var i in s.Inputs) { e.Axes.Add(i.Axis); AddGain(e, i.Axis, i.Gain); }
+                e.Travel = System.Math.Max(System.Math.Abs(s.MinDeg), System.Math.Abs(s.MaxDeg));
+                e.Servo = s.ServoDegPerSec;
+            }
             return e;
+        }
+
+        /// <summary>The design's moving surfaces drawn in the skin step (by key): their hinge pivot and hinge axis (root space).</summary>
+        private static readonly Dictionary<string, (Transform pivot, Vector3 axis)> _movingVisuals = new Dictionary<string, (Transform, Vector3)>();
+
+        /// <summary>
+        /// Each moving surface the design draws turns with the stock control surface its lift rides on: it copies that
+        /// surface's deflection (which the game sets from the controls, with the design's travel), so what you see is what
+        /// the flight model does. A surface whose lift rides on a fixed stock part stays still.
+        /// </summary>
+        private static void LinkMovingSurfaces(Transform root, List<DonorLift> donors, ControlSurface[] controls, List<string> notes)
+        {
+            if (_movingVisuals.Count == 0) return;
+            int linked = 0;
+            foreach (var d in donors)
+            {
+                if (!d.IsControl) continue;
+                var cs = controls.FirstOrDefault(c => c != null && c.attachedSurface == d.Part && c.visibleMesh != null);
+                if (cs == null) continue;
+                var stock = cs.visibleMesh.transform;
+                var stockAxis = root.InverseTransformDirection(stock.parent != null ? stock.parent.TransformDirection(stock.localRotation * Vector3.right) : stock.right);
+                foreach (var e in d.Matched)
+                {
+                    if (!_movingVisuals.TryGetValue(e.Key, out var mv) || mv.pivot == null) continue;
+                    var f = mv.pivot.gameObject.AddComponent<SurfaceFollower>();
+                    f.Stock = stock;
+                    f.StockRest = stock.localRotation;
+                    f.Axis = mv.axis.normalized;
+                    f.Sign = Vector3.Dot(stockAxis, mv.axis) >= 0 ? 1f : -1f;
+                    _movingVisuals.Remove(e.Key);
+                    linked++;
+                }
+            }
+            notes.Add($"moving surfaces: {linked} follow their stock control surfaces, {_movingVisuals.Count} stay still");
+            _movingVisuals.Clear();
+        }
+
+        private static void AddGain(DesignLift e, string axis, double gain)
+        {
+            if (string.IsNullOrEmpty(axis) || double.IsNaN(gain) || double.IsInfinity(gain)) return;
+            e.Gains[axis] = e.Gains.TryGetValue(axis, out var g) ? g + gain : gain;
+        }
+
+        // ------------------------------------------------------------------ control travel
+
+        /// <summary>How far a design's travel may take a stock control surface from its own (the game's autopilot is tuned to it).</summary>
+        private const float MinTravelScale = 0.4f, MaxTravelScale = 2f;
+
+        /// <summary>
+        /// The design's control travel and speed on the stock control surfaces its controls ride on. The game moves a surface
+        /// by input x range on each axis it has (pitch, roll, yaw), clamped to that range, at its servo speed; each stock range
+        /// takes the area-weighted travel of the design's controls on that axis (its gain, no more than its travel limit),
+        /// keeping the stock sign (which way the surface turns), within 0.4 to 2 times the stock range. An axis the design
+        /// doesn't drive there keeps the stock range; an axis the stock surface doesn't have can't be added. The game's flap
+        /// surfaces take the design's flap travel.
+        /// </summary>
+        private static void ApplyControlTravel(List<DonorLift> donors, ControlSurface[] controls, List<string> notes)
+        {
+            int changed = 0, clamped = 0;
+            var log = new List<string>();
+            foreach (var d in donors)
+            {
+                if (!d.IsControl || d.Matched.Count == 0) continue;
+                foreach (var cs in controls.Where(c => c != null && c.attachedSurface == d.Part))
+                {
+                    string Axis(string axis, ref float range)
+                    {
+                        var els = d.Matched.Where(e => e.Gains.ContainsKey(axis)).ToList();
+                        if (els.Count == 0 || Mathf.Abs(range) < 0.01f) return "";
+                        double area = els.Sum(e => e.Area);
+                        if (!(area > 0)) return "";
+                        double deg = els.Sum(e => e.Area * System.Math.Min(System.Math.Abs(e.Gains[axis]), e.Travel > 0 ? e.Travel : double.MaxValue)) / area;
+                        float stock = Mathf.Abs(range);
+                        float want = (float)deg;
+                        float set = Mathf.Clamp(want, stock * MinTravelScale, stock * MaxTravelScale);
+                        if (System.Math.Abs(set - want) > 0.05f) clamped++;
+                        if (!(set > 0) || float.IsNaN(set)) return "";
+                        string text = $"{axis} {stock:0.#}->{set:0.#}";
+                        range = Mathf.Sign(range) * set;
+                        return text;
+                    }
+                    var parts = new List<string>();
+                    if (cs.flap)
+                    {
+                        float r = cs.pitchRange;
+                        var t = Axis("flaps", ref r);
+                        if (t.Length > 0) { cs.pitchRange = r; parts.Add(t); }
+                    }
+                    else
+                    {
+                        float pr = cs.pitchRange, rr = cs.rollRange, yr = cs.yawRange;
+                        foreach (var t in new[] { Axis("pitch", ref pr), Axis("roll", ref rr), Axis("yaw", ref yr) }) if (t.Length > 0) parts.Add(t);
+                        cs.pitchRange = pr; cs.rollRange = rr; cs.yawRange = yr;
+                    }
+                    var servos = d.Matched.Where(e => e.Servo > 0).ToList();
+                    if (servos.Count > 0)
+                    {
+                        float stockServo = cs.servoSpeed;
+                        float want = (float)(servos.Sum(e => e.Area * e.Servo) / servos.Sum(e => e.Area));
+                        float set = stockServo > 0 ? Mathf.Clamp(want, stockServo * 0.5f, stockServo * 4f) : want;
+                        if (set > 0 && !float.IsNaN(set)) { parts.Add($"speed {stockServo:0}->{set:0} deg/s"); cs.servoSpeed = set; }
+                    }
+                    if (parts.Count > 0) { changed++; log.Add($"{cs.attachedSurface.name} " + string.Join(", ", parts)); }
+                }
+            }
+            notes.Add($"control travel: {changed} stock surfaces set from the design" + (clamped > 0 ? $" ({clamped} axes held within {MinTravelScale}-{MaxTravelScale}x stock)" : "") +
+                      (log.Count > 0 ? " [" + string.Join("; ", log) + "]" : ""));
+            if (changed > 0) Change($"Its control surfaces move as far and as fast as set in the builder ({changed} of the {_donorName}'s surfaces).");
         }
 
         // ------------------------------------------------------------------ pitch balance
@@ -949,6 +1106,33 @@ namespace OpenPlane.Mod
                 float f = (float)(designJet / stockJet);
                 foreach (var j in jets) j.maxThrust *= f;
                 notes.Add($"jet thrust {stockJet / 1000:0} -> {designJet / 1000:0} kN");
+
+                // Afterburners: the game adds each nozzle's afterburner thrust on top of the engine's (JetNozzle), at full
+                // throttle. It becomes the design's afterburner thrust minus its dry thrust; a design without afterburners
+                // gets none.
+                double designAb = design.Engines.Where(e => e.Type == "turbofan" || e.Type == "turbojet")
+                                        .Sum(e => System.Math.Max(0, e.AfterburnerThrustN - e.MaxThrustN));
+                var burners = new List<object>();
+                foreach (var nz in prefab.GetComponentsInChildren<JetNozzle>(true))
+                    if (HarmonyLib.Traverse.Create(nz).Field("afterburners").GetValue() is Array arr)
+                        foreach (var b in arr) if (b != null) burners.Add(b);
+                double stockAb = burners.Sum(b => (double)HarmonyLib.Traverse.Create(b).Field("thrust").GetValue<float>());
+                if (burners.Count > 0 && Positive(stockAb) && Positive(designAb))
+                {
+                    float g = (float)(designAb / stockAb);
+                    foreach (var b in burners)
+                    {
+                        var t = HarmonyLib.Traverse.Create(b).Field("thrust");
+                        t.SetValue(t.GetValue<float>() * g);
+                    }
+                    notes.Add($"afterburner thrust {stockAb / 1000:0} -> {designAb / 1000:0} kN on {burners.Count} nozzles");
+                }
+                else if (burners.Count > 0 && !Positive(designAb))
+                {
+                    // A design without afterburners keeps the stock ones for now: on their real thrust alone some (the converted
+                    // He 162) could no longer reach takeoff speed on the game's runways, as they did in OpenPlane 0.1.
+                    notes.Add($"afterburner: none in the design, the stock {stockAb / 1000:0} kN kept");
+                }
             }
 
             var turbines = prefab.GetComponentsInChildren<TurbineEngine>(true);
@@ -1021,7 +1205,15 @@ namespace OpenPlane.Mod
             var root = prefab.transform;
             var legs = prefab.GetComponentsInChildren<LandingGear>(true).Where(g => g != null).ToList();
             if (legs.Count == 0 || design.Gear == null || design.Gear.Count == 0) return;
-            var wheels = design.Gear.Select(g => toRoot(g.Position)).Where(Finite).ToList();
+            var gearDefs = design.Gear.Where(g => g?.Position != null && Finite(toRoot(g.Position))).ToList();
+            var wheels = gearDefs.Select(g => toRoot(g.Position)).ToList();
+            // Steering and brakes as designed, on the legs matched below. A design with no steering (or no brakes) at all keeps
+            // the stock plane's, so a converted plane whose file says nothing doesn't lose them.
+            // Planes converted from Flyout keep the stock ones: Flyout's gear flags don't mean the same (the converted Su-57 steers
+            // on its main wheels and not its nose, and lost its stock nose steering, so it couldn't taxi).
+            bool converted = string.Equals(design.Origin?.Source, "flyout", StringComparison.OrdinalIgnoreCase);
+            bool anySteers = !converted && gearDefs.Any(g => g.Steerable), anyBrakes = !converted && gearDefs.Any(g => g.Brakes);
+            int steerSet = 0, brakeSet = 0;
             var armTargets = prefab.GetComponentsInChildren<Transform>(true)
                 .Where(t => t.name.IndexOf("armtarget", StringComparison.OrdinalIgnoreCase) >= 0).ToList();
             var taken = new bool[wheels.Count];
@@ -1043,6 +1235,9 @@ namespace OpenPlane.Mod
                 }
                 if (best < 0) continue;
                 taken[best] = true;
+                var gt = HarmonyLib.Traverse.Create(g);
+                if (anySteers && gt.Field("steering").GetValue<bool>() != gearDefs[best].Steerable) { gt.Field("steering").SetValue(gearDefs[best].Steerable); steerSet++; }
+                if (anyBrakes && gt.Field("braked").GetValue<bool>() != gearDefs[best].Brakes) { gt.Field("braked").SetValue(gearDefs[best].Brakes); brakeSet++; }
                 // A nose leg moves to the design's nose wheel, but stays at least 1 m ahead of the loaded centre of gravity.
                 // Main legs only move across, to the design's track: along the plane they keep their stock spot, so the
                 // plane can't sit back on its tail and rotates on takeoff as the stock plane does (main legs moved forward
@@ -1064,7 +1259,8 @@ namespace OpenPlane.Mod
                 if (arm != null) { arm.position += worldDelta; armTargets.Remove(arm); }
                 moved++;
             }
-            notes.Add($"landing gear: {moved} of {legs.Count} legs moved under the design's wheels");
+            notes.Add($"landing gear: {moved} of {legs.Count} legs moved under the design's wheels; steering changed on {steerSet}, brakes on {brakeSet}" +
+                      $" (steering: {string.Join(",", legs.Select(l => HarmonyLib.Traverse.Create(l).Field("steering").GetValue<bool>() ? "y" : "n"))}, brakes: {string.Join(",", legs.Select(l => HarmonyLib.Traverse.Create(l).Field("braked").GetValue<bool>() ? "y" : "n"))})");
             if (moved > 0) Change($"Its landing gear stands where you placed the wheels ({moved} of the {_donorName}'s legs moved there, at their stock length).");
         }
 
@@ -1168,6 +1364,7 @@ namespace OpenPlane.Mod
             var taken = new bool[external.Count];
             var parts = prefab.GetComponentsInChildren<UnitPart>(true).Where(p => p != null && p.mass > 0).ToList();
             int movedStations = 0, offered = 0, closed = 0, heavyDropped = 0;
+            var setLog = new List<string>();
 
             void Close(HardpointSet set)
             {
@@ -1189,13 +1386,41 @@ namespace OpenPlane.Mod
             var order = Enumerable.Range(0, sets.Length).Where(i => sets[i]?.hardpoints != null && sets[i].hardpoints.Count > 0)
                 .OrderBy(i => sets[i].hardpoints.Where(h => h?.transform != null).Select(h => Mathf.Abs(root.InverseTransformPoint(h.transform.position).x)).DefaultIfEmpty(0).Average())
                 .ToList();
+            var gunTargets = design.Guns.Select(g => toRoot(g.Position)).ToList();
+            int gunStationsMoved = 0;
             foreach (int i in order)
             {
                 var set = sets[i];
                 if (IsGunSet(set)) continue;
+                // A station in the body that only takes guns is the plane's cannon (the KR-67's is a loadout choice, "27mm
+                // Autocannon"): it goes to the design's gun, not to a wing pylon (it took the Lanner's right inner pylon and
+                // left its pylons paired wrongly), and is closed on a design without guns.
+                var opts = set.weaponOptions?.Where(m => m != null).ToList() ?? new List<WeaponMount>();
+                bool bodyGun = opts.Count > 0 && opts.All(m => m.info != null && m.info.gun)
+                               && set.hardpoints.Where(h => h?.transform != null).All(h => Mathf.Abs(root.InverseTransformPoint(h.transform.position).x) < 1.5f);
+                if (bodyGun)
+                {
+                    if (gunTargets.Count == 0) { setLog.Add($"#{i} gun station closed (the design has no gun)"); Close(set); continue; }
+                    foreach (var hp in set.hardpoints)
+                    {
+                        if (hp?.transform == null) continue;
+                        var cur = root.InverseTransformPoint(hp.transform.position);
+                        var best = gunTargets.OrderBy(g => (Mathf.Abs(g.x) < 0.35f || Mathf.Abs(cur.x) < 0.35f || Mathf.Sign(g.x) == Mathf.Sign(cur.x) ? 0 : 1000) + (g - cur).sqrMagnitude).First();
+                        var target = root.TransformPoint(best);
+                        var delta = target - hp.transform.position;
+                        foreach (var r in PylonRenderers(hp))
+                            if (!r.transform.IsChildOf(hp.transform)) r.transform.position += delta;
+                        hp.transform.position = target;
+                        gunStationsMoved++;
+                    }
+                    offered++;
+                    setLog.Add($"#{i} gun station -> the design's gun");
+                    continue;
+                }
                 if (set.hardpoints.Any(h => h?.bayDoors != null && h.bayDoors.Length > 0))
                 {
                     if (anyInternal) offered++; else Close(set);
+                    setLog.Add($"#{i} bay x{set.hardpoints.Count} {(anyInternal ? "open" : "closed")}");
                     continue;
                 }
                 var picks = new List<int>();
@@ -1219,7 +1444,9 @@ namespace OpenPlane.Mod
                     }
                     picks.Add(best);
                 }
-                if (picks.Count == 0 || picks.Any(p => p < 0)) { Close(set); continue; }
+                string Where(HardpointSet s2) => string.Join(" ", s2.hardpoints.Where(h => h?.transform != null).Select(h => { var q = root.InverseTransformPoint(h.transform.position); return $"({q.x:0.0},{q.z:0.0})"; }));
+                if (picks.Count == 0 || picks.Any(p => p < 0)) { setLog.Add($"#{i} x{set.hardpoints.Count} at {Where(set)} closed (no free design hardpoint on that side)"); Close(set); continue; }
+                setLog.Add($"#{i} x{set.hardpoints.Count} at {Where(set)} -> " + string.Join(" ", picks.Select(k => $"({external[k].x:0.0},{external[k].z:0.0})")));
                 for (int s = 0; s < set.hardpoints.Count; s++)
                 {
                     var hp = set.hardpoints[s];
@@ -1243,23 +1470,53 @@ namespace OpenPlane.Mod
             }
 
             // Built-in guns to the design's guns (only gun objects that aren't parts themselves).
+            notes.Add("weapon stations: " + string.Join("; ", setLog) + $"; design hardpoints {string.Join(" ", external.Select(e => $"({e.x:0.0},{e.z:0.0})"))}");
             var gunPoints = design.Guns.Select(g => toRoot(g.Position)).ToList();
             int gunsMoved = 0;
+            var gunRates = new List<string>();
             if (gunPoints.Count > 0)
                 foreach (var set in sets)
                     if (set != null && IsGunSet(set))
                         foreach (var hp in set.hardpoints)
                             foreach (var w in hp?.BuiltInWeapons ?? new Weapon[0])
                             {
-                                if (w == null || w.GetComponent<UnitPart>() != null || w.GetComponentInChildren<UnitPart>(true) != null) continue;
+                                if (w == null) continue;
                                 var cur = root.InverseTransformPoint(w.transform.position);
-                                var best = gunPoints.OrderBy(g => (Mathf.Abs(g.x) < 0.35f || Mathf.Abs(cur.x) < 0.35f || Mathf.Sign(g.x) == Mathf.Sign(cur.x) ? 0 : 1000) + (g - cur).sqrMagnitude).First();
-                                w.transform.position = root.TransformPoint(best);
-                                gunsMoved++;
+                                int bestIndex = Enumerable.Range(0, gunPoints.Count)
+                                    .OrderBy(k => (Mathf.Abs(gunPoints[k].x) < 0.35f || Mathf.Abs(cur.x) < 0.35f || Mathf.Sign(gunPoints[k].x) == Mathf.Sign(cur.x) ? 0 : 1000) + (gunPoints[k] - cur).sqrMagnitude).First();
+                                var best = gunPoints[bestIndex];
+                                if (w.GetComponent<UnitPart>() == null && w.GetComponentInChildren<UnitPart>(true) == null)
+                                {
+                                    w.transform.position = root.TransformPoint(best);
+                                    gunsMoved++;
+                                }
+                                else if (w is Gun gun && gun.muzzles != null && gun.muzzles.Length > 0)
+                                {
+                                    // A gun built into a part (the KR-67's sits in its cockpit section) can't move without the part:
+                                    // its muzzles move instead, keeping their spacing, so the rounds leave from the design's gun.
+                                    var centre = gun.muzzles.Where(m => m != null).Aggregate(Vector3.zero, (s, m) => s + m.position) / Mathf.Max(1, gun.muzzles.Count(m => m != null));
+                                    var delta = root.TransformPoint(best) - centre;
+                                    foreach (var m in gun.muzzles) if (m != null) m.position += delta;
+                                    gunsMoved++;
+                                }
+                                // The design's rate of fire (rounds a minute), within a quarter and four times the stock gun's.
+                                var gd = design.Guns[bestIndex];
+                                if (w is Gun g2 && gd.RoundsPerMinute > 0)
+                                {
+                                    var fr = HarmonyLib.Traverse.Create(g2).Field("fireRate");
+                                    float stockRate = fr.GetValue<float>();
+                                    if (stockRate > 0)
+                                    {
+                                        float rate = Mathf.Clamp((float)gd.RoundsPerMinute, stockRate * 0.25f, stockRate * 4f);
+                                        fr.SetValue(rate);
+                                        gunRates.Add($"{stockRate:0}->{rate:0} rounds/min");
+                                    }
+                                }
                             }
 
             // Stores too heavy for the plane's size are no longer offered (a plane a third of the weight carries lighter ones).
-            if (ratio < 1f)
+            // Within 10 % of the stock plane's weight it carries everything the stock plane does.
+            if (ratio < 0.9f)
             {
                 float keep = Mathf.Sqrt(ratio);
                 foreach (var set in sets)
@@ -1301,7 +1558,7 @@ namespace OpenPlane.Mod
                 }).ToList();
 
             notes.Add($"weapons: {movedStations} stations moved onto {external.Count} design hardpoints, {offered} station sets offered, {closed} closed, " +
-                      $"{gunsMoved} guns moved, {heavyDropped} heavy options dropped, carries {capacity:0} kg (stock {stockMax:0} kg), {presetsTrimmed} AI presets trimmed");
+                      $"{gunsMoved + gunStationsMoved} guns moved" + (gunRates.Count > 0 ? $" (rate of fire {string.Join(", ", gunRates)})" : "") + $", {heavyDropped} heavy options dropped, carries {capacity:0} kg (stock {stockMax:0} kg), {presetsTrimmed} AI presets trimmed");
             if (external.Count == 0 && !anyInternal)
                 Change("It has no hardpoints, so it carries no bombs or missiles (only its guns). Add hardpoints in the builder to arm it.");
             else
@@ -1362,6 +1619,39 @@ namespace OpenPlane.Mod
                 }
             }
             if (design.Handling.GLimit > 3) p.aircraftGLimit = Mathf.Clamp((float)design.Handling.GLimit, 4f, 12f);
+            TuneFlyByWire(def.unitPrefab, design, notes);
+        }
+
+        /// <summary>
+        /// The design's g limit and angle-of-attack limit on the copy's fly-by-wire (ControlsFilter.FlyByWire: gLimitPositive,
+        /// what full stick asks for; alphaLimiter, where it starts easing the pull). 0 keeps the stock plane's.
+        /// </summary>
+        private static void TuneFlyByWire(GameObject prefab, AircraftDesign design, List<string> notes)
+        {
+            double g = design.Handling.GLimit, aoa = design.Handling.AoaLimitDeg;
+            if (!(g > 3) && !(aoa > 0)) return;
+            var cf = prefab.GetComponentInChildren<ControlsFilter>(true);
+            var fbw = cf == null ? null : HarmonyLib.Traverse.Create(cf).Field("flyByWire").GetValue();
+            if (fbw == null) { notes.Add("fly-by-wire: none on the stock plane, limits not set"); return; }
+            var t = HarmonyLib.Traverse.Create(fbw);
+            var parts = new List<string>();
+            var said = new List<string>();
+            if (g > 3)
+            {
+                float before = t.Field("gLimitPositive").GetValue<float>(), set = Mathf.Clamp((float)g, 4f, 12f);
+                t.Field("gLimitPositive").SetValue(set);
+                parts.Add($"g limit {before:0.#}->{set:0.#}");
+                said.Add($"{set:0.#} g");
+            }
+            if (aoa > 0)
+            {
+                float before = t.Field("alphaLimiter").GetValue<float>(), set = Mathf.Clamp((float)aoa, 10f, 60f);
+                t.Field("alphaLimiter").SetValue(set);
+                parts.Add($"angle-of-attack limit {before:0.#}->{set:0.#} deg");
+                said.Add($"{set:0.#}° angle of attack");
+            }
+            notes.Add("fly-by-wire: " + string.Join(", ", parts));
+            Change($"Its fly-by-wire keeps to the limits set in the builder: {string.Join(" and ", said)}.");
         }
 
         /// <summary>Numbers the host's multiplayer rules check (see <see cref="HostRules"/>).</summary>

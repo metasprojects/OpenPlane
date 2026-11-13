@@ -21,13 +21,14 @@ namespace OpenPlane.Core.Builder
     /// Built-in starting planes. Each one is a complete plane: it analyses with no problems and a static margin
     /// between 5 and 20 percent (checked by tests), and its gear is placed by <see cref="GearPlacer"/>.
     /// </summary>
-    public static class Templates
+    public static partial class Templates
     {
         public static readonly IReadOnlyList<PlaneTemplate> All = new List<PlaneTemplate>
         {
             new PlaneTemplate("trainer", "Trainer", "A forgiving propeller plane with a straight wing. Slow, stable and easy to land.", Trainer),
             new PlaneTemplate("fighter", "Fighter", "A single-jet fighter with a swept wing and an afterburner. Fast and agile.", Fighter),
             new PlaneTemplate("bomber", "Bomber", "A large twin-jet bomber with a long, slightly swept wing and lots of hardpoints.", Bomber),
+            new PlaneTemplate("strike", "Strike fighter", "A twin-jet multirole strike fighter with an all-moving V-tail, internal bays, wing pylons and a full cockpit. Built on the KR-67 Ifrit.", StrikeFighter),
             new PlaneTemplate("blank", "Blank", "An empty plane. Add a fuselage, wings, an engine and a cockpit yourself.", Blank),
         };
 
@@ -43,6 +44,7 @@ namespace OpenPlane.Core.Builder
             ("57a47e4000000001", "OP-1 Wren", "trainer", "OpenPlane's starter trainer: a forgiving propeller plane with a straight wing. Slow, stable and easy to land."),
             ("57a47e4000000002", "OP-2 Kite", "fighter", "OpenPlane's starter fighter: a single-jet fighter with a swept wing and an afterburner."),
             ("57a47e4000000003", "OP-3 Heron", "bomber", "OpenPlane's starter bomber: a large twin-jet bomber with a long, slightly swept wing and lots of hardpoints."),
+            ("57a47e4000000004", "OP-4 Lanner", "strike", "OpenPlane's starter strike fighter: a twin-jet multirole fighter with an all-moving V-tail, internal bays, four pylons, a 30 mm cannon and a full cockpit."),
         };
 
         /// <summary>The builder spec of starter plane <paramref name="index"/> (see <see cref="Starters"/>).</summary>

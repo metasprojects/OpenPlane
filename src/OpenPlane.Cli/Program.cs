@@ -24,7 +24,7 @@ namespace OpenPlane.Cli
                 if (args.Length >= 2 && args[0] == "inspect") return Inspect(args[1]);
                 if (args.Length >= 2 && args[0] == "template") return Template(args);
                 if (args.Length >= 1 && args[0] == "starters") return Starters(args);
-                Console.WriteLine("Usage:\n  openplane convert <Flyout craft folder> [-o plane.oplane] [--png view.png] [--builder name]\n  openplane inspect <plane.oplane>\n  openplane template <trainer|fighter|bomber> [-o plane.oplane]   (a builder template, as the app makes it)\n  openplane starters [-o folder]   (the three starter planes, as the app adds them)");
+                Console.WriteLine("Usage:\n  openplane convert <Flyout craft folder> [-o plane.oplane] [--png view.png] [--builder name]\n  openplane inspect <plane.oplane>\n  openplane template <trainer|fighter|bomber|strike> [-o plane.oplane]   (a builder template, as the app makes it)\n  openplane starters [-o folder]   (the four starter planes, as the app adds them)");
                 return 2;
             }
             catch (Exception e)
@@ -76,7 +76,7 @@ namespace OpenPlane.Cli
             return problems ? 3 : 0;
         }
 
-        /// <summary>openplane starters [-o folder]: the three starter planes, exactly as the app adds them.</summary>
+        /// <summary>openplane starters [-o folder]: the starter planes, exactly as the app adds them.</summary>
         private static int Starters(string[] args)
         {
             var folder = Option(args, "-o") ?? Directory.GetCurrentDirectory();

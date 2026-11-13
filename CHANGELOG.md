@@ -1,5 +1,52 @@
 # Changelog
 
+## 0.1.1
+
+**A fourth starter plane: OP-4 Lanner**
+- A single-seat, twin-jet multirole strike fighter built on the KR-67 Ifrit: chined forebody with a sunken cockpit,
+  bubble canopy, twin engine nacelles, leading-edge root extensions, a 42° wing with slats, flaperons and ailerons, a
+  40° all-moving V-tail, two afterburning turbofans, a 30 mm cannon, four internal bays and four wing pylons.
+- A full cockpit: ejection seat, consoles, twin throttles, side-stick, instrument panel and glare shield, head-up
+  display, three live displays, a full set of gauges and standby instruments, and mirrors; and a full set of lights.
+- Also in the builder as the "Strike fighter" template.
+
+**Flies as you set it up**
+- Control surfaces move as far and as fast as set in the builder (on the stock surfaces they ride on, within 0.4 to 2
+  times the stock travel, so the game's autopilot stays in tune).
+- Wings and tails can move as a whole: stabilators, tailerons, all-moving V-tails and turning fins ("Moves as a whole").
+- The fly-by-wire keeps to the plane's g limit and angle-of-attack limit.
+- Afterburners give the plane's own afterburner thrust (they gave the stock plane's before). A plane without
+  afterburners still gets the stock plane's for now (on their real thrust alone some converted WW2 jets can't reach
+  takeoff speed on the game's runways).
+- Each landing-gear leg of a plane built in OpenPlane steers and brakes as set in the builder (converted Flyout planes
+  keep the stock plane's steering and brakes).
+- Guns fire at the plane's own rate of fire; guns built into the stock plane's body now fire from the plane's own gun
+  position too.
+
+**Cockpits**
+- Screens can show a live page: flight (attitude, speed, altitude, heading, g, angle of attack), engine (engine speed,
+  throttle, fuel) or navigation (heading, height above the ground, climb rate).
+- Levers can move with the throttle, the landing gear or the stick.
+
+**Fixes**
+- A plane a little lighter than its stock plane no longer loses the stock plane's heaviest stores (now only planes more
+  than 10 % lighter carry lighter stores).
+- A stock plane's cannon that is a loadout choice (the KR-67 Ifrit's 27 mm) now sits at the plane's own gun instead of
+  being hung on a wing pylon, where it also left the wing pylons paired wrongly; a plane without a gun doesn't get it.
+- Engine-speed gauges read jet engines (they showed 0 % on every jet).
+- Moving control surfaces: ailerons, flaps, elevators, rudders and all-moving tails now visibly move in the game.
+
+**Known limits (early access)**
+- Tested in game with 16 planes: all fly from an air start, and 15 take off from a runway with AI pilots (the
+  converted Batwing tipped over taxiing at the desert airbase; it takes off from the city airbase). The OP-4 Lanner and
+  the KR-67 Ifrit land, taxi and park with AI pilots; one converted twin-body plane still crashed a landing.
+  Multiplayer hasn't been tested with two players yet.
+- The OP-4 Lanner's weapons were tested against planes, vehicles and radars: 13 of its 21 weapons destroyed targets
+  (every air-to-air missile, the guided missiles and bombs, rockets and cluster bombs). The cannon fires but made no
+  kill in the test, and AI pilots don't use nuclear weapons on single targets.
+- A plane keeps its stock plane's hit boxes, sensors and gear wheels; gun calibre and gear retraction are saved but not
+  used in the game yet (the builder marks them).
+
 ## 0.1.0 (first release)
 
 Tested with Nuclear Option 0.34.6, BepInEx 5.4.23.4 and Blueprinter 2.1.1.

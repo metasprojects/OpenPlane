@@ -87,12 +87,12 @@ async function renderStatus(page) {
   });
 }
 
-/** Adds the three starter planes; tells the player what happened. */
+/** Adds the starter planes; tells the player what happened. */
 export async function addStarters() {
   try {
     const r = await api.post('/api/planes/starters');
     const added = r.results.filter(x => x.outcome === 'added').map(x => x.plane.name);
-    toast(added.length ? `Added ${added.join(', ')}. Press Test fly on one to fly it.` : 'You already have the three starter planes.', { kind: added.length ? 'good' : 'info', timeout: 9000 });
+    toast(added.length ? `Added ${added.join(', ')}. Press Test fly on one to fly it.` : 'You already have the four starter planes.', { kind: added.length ? 'good' : 'info', timeout: 9000 });
     window.dispatchEvent(new CustomEvent('openplane-imported', { detail: r.results }));
   } catch (e) { showError(e); }
 }
@@ -117,7 +117,7 @@ async function renderChecklist(page) {
   const steps = [
     { done: st.paths.game.valid, title: 'Find Nuclear Option', text: 'OpenPlane installs its mod into the game.', actions: [['Find it', () => go('#/settings?focus=game')]] },
     { done: modOk, title: 'Install the OpenPlane mod', text: 'It loads your planes into the game (with BepInEx and Blueprinter).', actions: [['Install', async () => { await installModFlow(); refreshHeader(true); renderStatus(page); renderChecklist(page); }]] },
-    { done: list.length > 0, title: 'Get a plane', text: 'Add the three starter planes, convert one from Flyout, or build your own.',
+    { done: list.length > 0, title: 'Get a plane', text: 'Add the four starter planes, convert one from Flyout, or build your own.',
       actions: [['Add starter planes', () => addStarters(), true], ['Convert', () => go('#/convert')], ['Build', () => go('#/build')]] },
     { done: flown, title: 'Fly it', text: 'Test fly opens the game straight into a flight in your plane.',
       actions: first ? [[`Test fly ${first.name}`, () => launchGame({ planeName: first.name, donor: donorLabel(first.donor), testFlyPlaneId: first.id })]] : [] },
@@ -160,7 +160,7 @@ async function loadPlanes(page) {
     host.replaceChildren(html(`<div class="card empty">
         ${icon('plane', 'big')}
         <h3>No planes yet</h3>
-        <p>Convert one from Flyout or build your own, or start with OpenPlane's three starter planes. Planes you import also appear here.</p>
+        <p>Convert one from Flyout or build your own, or start with OpenPlane's four starter planes. Planes you import also appear here.</p>
         <div class="btn-row"><button type="button" class="btn primary" data-starters>Add starter planes</button><button type="button" class="btn" data-go="#/convert">Convert from Flyout</button><button type="button" class="btn" data-go="#/build">Build a new plane</button></div>
       </div>`));
     host.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));

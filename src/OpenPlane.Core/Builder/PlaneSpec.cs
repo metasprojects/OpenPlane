@@ -180,6 +180,13 @@ namespace OpenPlane.Core.Builder
         /// <summary>Twist of the tip against the root (degrees; positive turns the tip nose-up, negative is washout).</summary>
         public double TwistDeg { get; set; }
         public List<SurfaceSpec> Surfaces { get; set; } = new List<SurfaceSpec>();
+        /// <summary>
+        /// Wing kind: the whole panel turns (an all-moving tail or stabilator, an all-moving V-tail, a turning fin), driven like
+        /// a control surface of this type, with its travel, speed and inputs. Its From, To, Chord and Edge are ignored. Null
+        /// for a fixed panel. Hinged strips in <see cref="Surfaces"/> still work on a moving panel.
+        /// </summary>
+        public SurfaceSpec? Moving { get; set; }
+        public bool ShouldSerializeMoving() => Moving != null;
         /// <summary>Palette material id; null is the plane's paint.</summary>
         public string? MaterialId { get; set; }
 

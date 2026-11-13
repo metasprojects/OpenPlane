@@ -525,6 +525,19 @@ namespace OpenPlane.Core.Builder
                 covered = s.s1;
             }
             if (lmax > 0 && covered < 1 - 1e-6) panel.Surfaces.Add(Strip(covered, 1, 0, lmax, "leading"));
+
+            // An all-moving panel: the whole panel is the control, with the type's travel and inputs (and any overrides).
+            if (w.Moving != null && !string.IsNullOrEmpty(w.Moving.Type) && w.Moving.Type != "none")
+            {
+                var whole = new SurfaceDef();
+                ApplyRole(whole, w.Moving, midX, up);
+                panel.Inputs = whole.Inputs;
+                panel.MinDeg = whole.MinDeg;
+                panel.MaxDeg = whole.MaxDeg;
+                panel.ServoDegPerSec = whole.ServoDegPerSec;
+                if (panel.Inputs.Count == 0)
+                    notes.Add(new BuilderNote { Level = "note", ItemId = w.Id, Message = $"\"{w.Name}\" is set to move as a whole but has no inputs, so it stays still." });
+            }
             return panel;
         }
 
@@ -612,7 +625,7 @@ namespace OpenPlane.Core.Builder
                 Up = Copy(p.Up), RootTwistDeg = p.RootTwistDeg, TipTwistDeg = p.TipTwistDeg,
                 ThicknessRaw = p.ThicknessRaw, ThicknessRatio = p.ThicknessRatio, FuelTank = p.FuelTank, Material = p.Material,
                 Inputs = (p.Inputs ?? new List<InputLink>()).Select(i => new InputLink { Axis = i.Axis, Gain = i.Gain }).ToList(),
-                MinDeg = p.MinDeg, MaxDeg = p.MaxDeg,
+                MinDeg = p.MinDeg, MaxDeg = p.MaxDeg, ServoDegPerSec = p.ServoDegPerSec,
                 Surfaces = p.Surfaces.Select(s => new SurfaceDef
                 {
                     SourcePartId = s.SourcePartId, Role = s.Role, Edge = s.Edge,
@@ -634,7 +647,7 @@ namespace OpenPlane.Core.Builder
                 Up = MirrorPoint(p.Up), RootTwistDeg = p.RootTwistDeg, TipTwistDeg = p.TipTwistDeg,
                 ThicknessRaw = p.ThicknessRaw, ThicknessRatio = p.ThicknessRatio, FuelTank = p.FuelTank, Material = p.Material,
                 Inputs = (p.Inputs ?? new List<InputLink>()).Select(i => new InputLink { Axis = i.Axis, Gain = MirrorsGain(i.Axis) ? -i.Gain : i.Gain }).ToList(),
-                MinDeg = p.MinDeg, MaxDeg = p.MaxDeg,
+                MinDeg = p.MinDeg, MaxDeg = p.MaxDeg, ServoDegPerSec = p.ServoDegPerSec,
                 Surfaces = p.Surfaces.Select(s => new SurfaceDef
                 {
                     SourcePartId = s.SourcePartId, Role = s.Role, Edge = s.Edge,

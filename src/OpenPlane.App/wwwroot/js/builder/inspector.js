@@ -32,6 +32,14 @@ const READINGS = [
   ['rpm', 'Engine speed (%)'], ['throttle', 'Throttle (0 to 1)'], ['fuel', 'Fuel left (0 to 1)'], ['g', 'G-force (g)'], ['aoa', 'Angle of attack (°)'],
   ['heading', 'Heading (°)'], ['clock', 'Clock (hours)'],
 ];
+// What a screen shows and what moves a lever in the game (the instrument's "reads").
+const SCREEN_PAGES = [['', 'Nothing (a plain green display)'], ['flight', 'Flight: attitude, speed, altitude, heading, g'], ['engine', 'Engine: engine speed, throttle and fuel bars'], ['nav', 'Navigation: heading, height above the ground, climb rate']];
+const SCREEN_HELP = {
+  flight: 'A small primary flight display: an attitude ball with airspeed (knots) on the left, altitude (feet) on the right, heading on top, g and angle of attack below.',
+  engine: 'Three bars with numbers: engine speed, throttle and fuel left.',
+  nav: 'A heading needle with the heading, the height above the ground (feet) and the climb rate (feet a minute).',
+};
+const LEVER_MOTIONS = [['', 'Nothing (it stays still)'], ['throttle', 'The throttle (forward for more power)'], ['gear', 'The landing gear (down with the gear)'], ['stick', 'The stick (pitch and roll)']];
 const INSTRUMENT_HELP = {
   attitude: 'Shows the horizon: blue sky over brown ground, tilting and rolling with the plane.',
   compass: 'Its needle shows which way the plane is heading.',
@@ -317,7 +325,7 @@ function planeFields(host, ctx, set) {
   host.append(group('Fly-by-wire',
     row2(num('G limit', s.handling?.g_limit || 0, (v, f) => set(p => { p.handling = { ...(p.handling || {}), g_limit: v }; }, f, { inspector: false }), { unit: 'g', step: 0.5, min: 0, max: 20, digits: 1 }),
       num('Angle-of-attack limit', s.handling?.aoa_limit_deg || 0, (v, f) => set(p => { p.handling = { ...(p.handling || {}), aoa_limit_deg: v }; }, f, { inspector: false }), { unit: '°', step: 1, min: 0, max: 90, digits: 0 })),
-    html(`<span class="faint small">0 uses the stock plane's limits. The game uses the G limit (4 to 12 g); the angle-of-attack limit is ${NOT_IN_GAME}.</span>`)));
+    html(`<span class="faint small">0 uses the stock plane's limits. The game's fly-by-wire keeps to both: the G limit (4 to 12 g) and the angle-of-attack limit (10 to 60°).</span>`)));
 
   const sensors = s.sensors || {};
   const sensorBox = group(`Sensors and defences ${NOT_IN_GAME}`);
@@ -640,7 +648,55 @@ function wingFields(host, ctx, w, set, nameField) {
     row2(num('Tip twist', w.twist_deg || 0, (v, f) => set(it => { it.twist_deg = v; }, f), { unit: '°', step: 0.25, min: -30, max: 30, digits: 2, title: 'Washout: a negative twist turns the tip nose-down so it stalls last' }),
       num('Thickness', (w.thickness_ratio ?? 0.12) * 100, (v, f) => set(it => { it.thickness_ratio = v / 100; }, f), { unit: '%', step: 1, min: 2, max: 30, digits: 0 })),
     html(`<span class="faint small">Press <kbd>Tab</kbd> to drag the four corners in the view.</span>`)));
+  host.append(movingGroup(w, set));
   host.append(surfaceList(ctx, w, set));
+}
+
+/** Panel types that can turn as a whole: an all-moving tail, an all-moving V-tail or a turning fin. */
+const MOVING_TYPES = [
+  ['', 'No: a fixed panel'], ['elevator', 'Stabilator (pitch)'], ['elevon', 'Taileron (pitch + roll)'],
+  ['ruddervator', 'All-moving V-tail (pitch + yaw)'], ['rudder', 'All-moving fin (yaw)'], ['aileron', 'Roll only'],
+];
+
+function movingGroup(w, set) {
+  const m = w.moving && w.moving.type && w.moving.type !== 'none' ? w.moving : null;
+  const box = html(`<div class="insp-group"><span class="label-caps">Moves as a whole</span></div>`);
+  box.append(select('The whole panel turns', m ? m.type : '', MOVING_TYPES, v => set(it => {
+    if (!v) delete it.moving; else it.moving = { type: v };
+  }, true)));
+  if (m) {
+    const at = (fn, fin = true) => set(it => fn(it.moving), fin, { inspector: fin });
+    box.append(travelEditor(m, ROLE_DEFAULTS[m.type] || { min: -20, max: 20, servo: 90, inputs: [] }, at));
+    box.append(html(`<span class="faint small">The whole panel is the control surface, like a stabilator or an all-moving V-tail. Hinged strips below still work too.</span>`));
+  }
+  return box;
+}
+
+/** Travel, speed and inputs of a control surface (a strip or a whole panel); "at" applies a change to it. */
+function travelEditor(s, def, at) {
+  const out = html(`<div></div>`);
+  const travel = html(`<div class="row3"></div>`);
+  travel.append(num('Min', s.min_deg ?? def.min, (v, f) => at(x => { x.min_deg = v; }, f), { unit: '°', step: 1, min: -90, max: 90, digits: 0 }),
+    num('Max', s.max_deg ?? def.max, (v, f) => at(x => { x.max_deg = v; }, f), { unit: '°', step: 1, min: -90, max: 90, digits: 0 }),
+    num('Speed', s.servo_deg_per_sec ?? def.servo, (v, f) => at(x => { x.servo_deg_per_sec = v; }, f), { unit: '°/s', step: 5, min: 1, max: 500, digits: 0 }));
+  out.append(html(`<span class="label-caps" style="margin-top:2px">Deflection and inputs</span>`), travel);
+  const inputs = Array.isArray(s.inputs) ? s.inputs : def.inputs.map(([axis, gain]) => ({ axis, gain }));
+  const custom = Array.isArray(s.inputs) || s.min_deg != null || s.max_deg != null || s.servo_deg_per_sec != null;
+  const box = html(`<div class="insp-sub"></div>`);
+  inputs.forEach((inp, k) => {
+    const r = html(`<div class="input-row"></div>`);
+    r.append(select(k ? '' : 'Input', inp.axis, AXES, v => at(x => { x.inputs = [...inputs.map(q => ({ ...q }))]; x.inputs[k].axis = v; })),
+      num(k ? '' : 'Gain', inp.gain, (v, f) => at(x => { x.inputs = [...inputs.map(q => ({ ...q }))]; x.inputs[k].gain = v; }, f), { unit: '°', step: 1, min: -90, max: 90, digits: 0 }),
+      html(`<button type="button" class="icon-btn" title="Remove this input" aria-label="Remove this input">${icon('x', 'sm')}</button>`));
+    r.lastChild.onclick = () => at(x => { x.inputs = inputs.filter((_, j) => j !== k).map(q => ({ ...q })); });
+    box.append(r);
+  });
+  const brow = html(`<div class="btn-row"></div>`);
+  brow.append(button('Add input', 'plus', () => at(x => { x.inputs = [...inputs.map(q => ({ ...q })), { axis: 'pitch', gain: 10 }]; })));
+  if (custom) brow.append(button('Defaults', 'refresh', () => at(x => { delete x.inputs; delete x.min_deg; delete x.max_deg; delete x.servo_deg_per_sec; })));
+  box.append(brow);
+  out.append(box);
+  return out;
 }
 
 function surfaceList(ctx, w, set) {
@@ -665,34 +721,14 @@ function surfaceList(ctx, w, set) {
       num('To', s.to_pct, (v, f) => at(x => { x.to_pct = v; }, f), { unit: '%', step: 1, min: 0, max: 100, digits: 0 }),
       num('Chord', s.chord_pct, (v, f) => at(x => { x.chord_pct = v; }, f), { unit: '%', step: 1, min: 5, max: 60, digits: 0 }));
     row.append(nums);
-    if (s.type !== 'none') {
-      const travel = html(`<div class="row3"></div>`);
-      travel.append(num('Min', s.min_deg ?? def.min, (v, f) => at(x => { x.min_deg = v; }, f), { unit: '°', step: 1, min: -90, max: 90, digits: 0 }),
-        num('Max', s.max_deg ?? def.max, (v, f) => at(x => { x.max_deg = v; }, f), { unit: '°', step: 1, min: -90, max: 90, digits: 0 }),
-        num('Speed', s.servo_deg_per_sec ?? def.servo, (v, f) => at(x => { x.servo_deg_per_sec = v; }, f), { unit: '°/s', step: 5, min: 1, max: 500, digits: 0 }));
-      row.append(html(`<span class="label-caps" style="margin-top:2px">Deflection and inputs ${NOT_IN_GAME}</span>`), travel);
-      const inputs = Array.isArray(s.inputs) ? s.inputs : def.inputs.map(([axis, gain]) => ({ axis, gain }));
-      const custom = Array.isArray(s.inputs);
-      const box = html(`<div class="insp-sub"></div>`);
-      inputs.forEach((inp, k) => {
-        const r = html(`<div class="input-row"></div>`);
-        r.append(select(k ? '' : 'Input', inp.axis, AXES, v => at(x => { x.inputs = [...inputs.map(q => ({ ...q }))]; x.inputs[k].axis = v; })),
-          num(k ? '' : 'Gain', inp.gain, (v, f) => at(x => { x.inputs = [...inputs.map(q => ({ ...q }))]; x.inputs[k].gain = v; }, f), { unit: '°', step: 1, min: -90, max: 90, digits: 0 }),
-          html(`<button type="button" class="icon-btn" title="Remove this input" aria-label="Remove this input">${icon('x', 'sm')}</button>`));
-        r.lastChild.onclick = () => at(x => { x.inputs = inputs.filter((_, j) => j !== k).map(q => ({ ...q })); });
-        box.append(r);
-      });
-      const brow = html(`<div class="btn-row"></div>`);
-      brow.append(button('Add input', 'plus', () => at(x => { x.inputs = [...inputs.map(q => ({ ...q })), { axis: 'pitch', gain: 10 }]; })));
-      if (custom) brow.append(button('Defaults', 'refresh', () => at(x => { delete x.inputs; delete x.min_deg; delete x.max_deg; delete x.servo_deg_per_sec; })));
-      box.append(brow);
-      row.append(box);
-    }
+    if (s.type !== 'none') row.append(travelEditor(s, def, at));
     row.querySelector('[data-a=rm]').onclick = () => set(it => { it.surfaces.splice(i, 1); }, true);
     row.querySelector('[data-a=pick]').onclick = () => ctx.actions.selectSurface(i);
     sl.append(row);
   });
-  if (!(w.surfaces || []).length) sl.append(html(`<span class="muted small">None yet. Wings need ailerons (or elevons), tails need elevators, fins need rudders.</span>`));
+  if (!(w.surfaces || []).length) sl.append(html(w.moving && w.moving.type && w.moving.type !== 'none'
+    ? `<span class="muted small">None: the whole panel is the control (Moves as a whole, above).</span>`
+    : `<span class="muted small">None yet. Wings need ailerons (or elevons), tails need elevators, fins need rudders.</span>`));
   surfs.querySelector('[data-add]').onclick = () => set(it => {
     const used = (it.surfaces || []).filter(s => s.edge !== 'leading' && s.type !== 'slat').reduce((m, s) => Math.max(m, s.to_pct), 0);
     const type = it.vertical ? 'rudder' : /tail|stab/i.test(it.name) ? 'elevator' : (it.surfaces || []).some(s => s.type === 'aileron') ? 'flap' : 'aileron';
@@ -762,9 +798,9 @@ function gearFields(host, ctx, g, set, nameField) {
     row2(num('Strut length', g.strut_length, (v, f) => set(it => { it.strut_length = v; }, f), { unit: 'm', step: 0.02, min: 0.05, hint: NOT_IN_GAME }),
       num('Wheel radius', g.wheel_radius, (v, f) => set(it => { it.wheel_radius = v; }, f), { unit: 'm', step: 0.01, min: 0.05, hint: NOT_IN_GAME })),
     num('Suspension travel', g.travel ?? 0.2, (v, f) => set(it => { it.travel = v; }, f), { unit: 'm', step: 0.01, min: 0, hint: NOT_IN_GAME })));
-  host.append(group(`Behaviour ${NOT_IN_GAME}`, check('Steers', g.steerable, v => set(it => { it.steerable = v; }, true)), check('Brakes', g.brakes, v => set(it => { it.brakes = v; }, true)),
-    check('Folds up in flight', g.retractable, v => set(it => { it.retractable = v; }, true)),
-    html(`<span class="faint small">In the game the stock plane's legs move to these wheels: the nose leg across and along the plane (at least 1 m ahead of the balance point), the main legs across only, so the plane rests and rotates on takeoff like the stock plane. Leg length, steering, brakes and retraction stay the stock ones.</span>`)));
+  host.append(group('Behaviour', check('Steers', g.steerable, v => set(it => { it.steerable = v; }, true)), check('Brakes', g.brakes, v => set(it => { it.brakes = v; }, true)),
+    check('Folds up in flight', g.retractable, v => set(it => { it.retractable = v; }, true), NOT_IN_GAME),
+    html(`<span class="faint small">In the game the stock plane's legs move to these wheels: the nose leg across and along the plane (at least 1 m ahead of the balance point), the main legs across only, so the plane rests and rotates on takeoff like the stock plane. Each leg steers and brakes as set here (a plane with no steering or no brakes at all keeps the stock plane's). Leg length and retraction stay the stock ones.</span>`)));
   host.append(group('', button('Auto-place all gear', 'magic', () => ctx.actions.autoGear()),
     html(`<span class="faint small">A nose wheel and two main wheels where they balance the plane, with struts long enough to clear the ground.</span>`)));
 }
@@ -782,12 +818,12 @@ function hardpointFields(host, ctx, h, set, nameField) {
 
 function gunFields(host, ctx, g, set, nameField) {
   host.append(group('', nameField(), mirrorField(g, set, 'gun')));
-  const cal = num('Calibre', g.caliber_mm, (v, f) => set(it => { it.caliber_mm = v; }, f, { outline: f }), { unit: 'mm', step: 0.1, min: 5, max: 40, digits: 1 });
+  const cal = num('Calibre', g.caliber_mm, (v, f) => set(it => { it.caliber_mm = v; }, f, { outline: f }), { unit: 'mm', step: 0.1, min: 5, max: 40, digits: 1, hint: NOT_IN_GAME });
   const listId = fid();
   cal.querySelector('input').setAttribute('list', listId);
   cal.append(html(`<datalist id="${listId}">${[7.62, 12.7, 20, 23, 25, 27, 30].map(c => `<option value="${c}">`).join('')}</datalist>`));
-  host.append(group(`Gun ${NOT_IN_GAME}`, row2(cal, num('Rate of fire', g.rounds_per_minute, (v, f) => set(it => { it.rounds_per_minute = v; }, f), { unit: 'rpm', step: 100, min: 100, digits: 0 })),
-    html(`<span class="faint small">In the game the stock plane's gun fires from here; its calibre and rate of fire stay the stock gun's for now.</span>`)));
+  host.append(group('Gun', row2(cal, num('Rate of fire', g.rounds_per_minute, (v, f) => set(it => { it.rounds_per_minute = v; }, f), { unit: 'rpm', step: 100, min: 100, digits: 0 })),
+    html(`<span class="faint small">In the game the stock plane's gun fires from here at this rate of fire (within a quarter and four times the stock gun's); its calibre stays the stock gun's for now.</span>`)));
   host.append(group('Placement', vec3('Position', g.position, (v, f) => set(it => { it.position = v; }, f)),
     vec3('Points towards', g.direction || [0, 0, 1], (v, f) => set(it => { it.direction = v; }, f), { unit: '', step: 0.05 })));
 }
@@ -842,6 +878,12 @@ function instrumentFields(host, ctx, n, set, nameField) {
     g.append(row2(num('Needle at the start', n.min_deg ?? 30, (v, f) => set(it => { it.min_deg = v; }, f), { unit: '°', step: 5, min: -360, max: 720, digits: 0 }),
       num('Needle at the end', n.max_deg ?? 330, (v, f) => set(it => { it.max_deg = v; }, f), { unit: '°', step: 5, min: -360, max: 720, digits: 0 })));
     g.append(html(`<span class="faint small">Needle angles go clockwise from 12 o'clock. Leave the dial at 0 to 1 to use the usual range of what it shows (for airspeed, 0 to 1,000 km/h).</span>`));
+  } else if (kind === 'screen') {
+    g.append(select('Shows', n.reads || '', SCREEN_PAGES, v => set(it => { if (v) it.reads = v; else delete it.reads; }, true, { outline: true })));
+    g.append(html(`<span class="faint small">${esc(SCREEN_HELP[n.reads || ''] || INSTRUMENT_HELP.screen)}</span>`));
+  } else if (kind === 'lever') {
+    g.append(select('Moves with', n.reads || '', LEVER_MOTIONS, v => set(it => { if (v) it.reads = v; else delete it.reads; }, true, { outline: true })));
+    g.append(html(`<span class="faint small">${esc(INSTRUMENT_HELP.lever)}</span>`));
   } else g.append(html(`<span class="faint small">${esc(INSTRUMENT_HELP[kind] || '')}</span>`));
   g.append(html(`<span class="faint small">OpenPlane draws this instrument in the game and moves it as you fly.</span>`));
   host.append(g);

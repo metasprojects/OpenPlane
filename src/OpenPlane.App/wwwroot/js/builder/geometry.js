@@ -218,6 +218,13 @@ function parametricPanel(w, notes) {
     covered = s.s1;
   }
   if (lmax > 0 && covered < 1 - 1e-6) panel.surfaces.push(strip(covered, 1, 0, lmax, 'leading'));
+  // An all-moving panel (as DesignGenerator.ParametricPanel): the whole panel is the control.
+  if (w.moving && w.moving.type && w.moving.type !== 'none') {
+    const whole = {};
+    applySurface(whole, w.moving, midX, up);
+    panel.inputs = whole.inputs; panel.min_deg = whole.min_deg; panel.max_deg = whole.max_deg; panel.servo_deg_per_sec = whole.servo_deg_per_sec;
+    if (!panel.inputs.length) notes.push({ level: 'note', item_id: w.id, message: `"${w.name}" is set to move as a whole but has no inputs, so it stays still.` });
+  }
   return panel;
 }
 
@@ -247,6 +254,8 @@ export function mirrorPanel(p, name) {
     ...p, name,
     root_leading: mirrorPoint(p.root_leading), root_trailing: mirrorPoint(p.root_trailing),
     tip_leading: mirrorPoint(p.tip_leading), tip_trailing: mirrorPoint(p.tip_trailing), up: mirrorPoint(p.up),
+    // An all-moving panel's roll and yaw reverse on the other side, as its strips' do.
+    inputs: (p.inputs || []).map(i => ({ ...i, gain: mirrorsGain(i.axis) ? -i.gain : i.gain })),
     surfaces: (p.surfaces || []).map(s => ({
       ...s,
       root_leading: mirrorPoint(s.root_leading), root_trailing: mirrorPoint(s.root_trailing),

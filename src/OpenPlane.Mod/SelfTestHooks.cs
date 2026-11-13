@@ -15,6 +15,8 @@ namespace OpenPlane.Mod
     internal static class SelfTestHooks
     {
         private static readonly Dictionary<string, float> LastLogged = new Dictionary<string, float>();
+        /// <summary>Wheels broken on OpenPlane planes since the self-test started (plane, leg, speed).</summary>
+        internal static readonly List<string> WheelsBroken = new List<string>();
 
         public static void Install(Harmony harmony)
         {
@@ -27,6 +29,26 @@ namespace OpenPlane.Mod
             Hook(harmony, typeof(AIPilotTaxiState), "EjectCheck", Type.EmptyTypes, nameof(OnTaxiTiltCheck));
             Hook(harmony, typeof(AIPilotTaxiState), "Taxi_OnTakeDamage", null, nameof(OnTaxiDamage));
             Hook(harmony, typeof(UnitPart), "ApplyDamage", new[] { typeof(float), typeof(float), typeof(float), typeof(float) }, nameof(OnApplyDamage));
+            Hook(harmony, typeof(UnitPart), "ApplyDamage", new[] { typeof(float), typeof(float), typeof(float), typeof(float) }, nameof(Shield));
+        }
+
+        /// <summary>
+        /// Planes in a weapons-test sortie: weapon hits (fragments, blast, fire) on them are ignored and counted, so a sortie
+        /// tests the weapons rather than whether enemy air defences catch the plane. Hitting the ground still counts.
+        /// </summary>
+        internal static readonly HashSet<Aircraft> Shielded = new HashSet<Aircraft>();
+        internal static int ShieldedHits;
+
+        private static bool Shield(UnitPart __instance, float netPierceDamage, float netBlastDamage, float netFireDamage)
+        {
+            try
+            {
+                if (Shielded.Count == 0 || !(__instance.parentUnit is Aircraft a) || !Shielded.Contains(a)) return true;
+                if (netPierceDamage + netBlastDamage + netFireDamage <= 0f) return true;
+                if (Due(a.GetInstanceID() + ":shield", 2f)) { ShieldedHits++; Log(a, $"hit on {__instance.name} ignored (weapons test; pierce {netPierceDamage:0}, blast {netBlastDamage:0}, fire {netFireDamage:0})"); }
+                return false;
+            }
+            catch { return true; }
         }
 
         private static Aircraft? TaxiAircraft(AIPilotTaxiState state)
@@ -124,7 +146,7 @@ namespace OpenPlane.Mod
 
         private static void OnBreakWheel(LandingGear __instance)
         {
-            try { if (Ours(__instance.aircraft) is Aircraft a) Log(a, $"wheel {__instance.name} breaks"); } catch { }
+            try { if (Ours(__instance.aircraft) is Aircraft a) { Log(a, $"wheel {__instance.name} breaks"); WheelsBroken.Add($"{a.unitName}: {__instance.name} at {a.speed:0} m/s"); } } catch { }
         }
 
         private static void OnGForce(Pilot __instance, float sqrGForces)

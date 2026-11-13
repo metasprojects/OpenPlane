@@ -271,7 +271,7 @@ public static class Endpoints
             return ApiJson.Ok(new { kind = "plane", plane = one.Plane, outcome = one.Outcome });
         });
 
-        // The three starter planes (the same for everyone, so they match in multiplayer).
+        // The starter planes (the same for everyone, so they match in multiplayer).
         app.MapPost("/api/planes/starters", () => ApiJson.Ok(new { results = s.Planes.AddStarters().Select(PackResult) }));
 
         // Several planes as one plane pack (a .zip of .oplane files), e.g. every plane a host flies with.

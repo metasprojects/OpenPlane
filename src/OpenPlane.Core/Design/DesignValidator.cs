@@ -66,7 +66,7 @@ namespace OpenPlane.Core.Design
                 Point(n.Position, at + ".position"); Vector(n.Rotation, 4, at + ".rotation");
                 Num(n.Size, at + ".size"); Num(n.Min, at + ".min"); Num(n.Max, at + ".max"); Num(n.MinDeg, at + ".min_deg"); Num(n.MaxDeg, at + ".max_deg");
                 if (System.Array.IndexOf(InstrumentDef.Kinds, n.Kind) < 0) n.Kind = "gauge";
-                if (n.Reads != null && System.Array.IndexOf(InstrumentDef.Readings, n.Reads) < 0) n.Reads = null;
+                if (n.Reads != null && !InstrumentDef.ReadsFits(n.Kind, n.Reads)) n.Reads = null;
                 n.Size = System.Math.Min(System.Math.Max(n.Size, 0.01), 2);
                 n.Name ??= "Instrument";
             }
